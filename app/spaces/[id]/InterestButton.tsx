@@ -49,7 +49,7 @@ export default function InterestButton({ spaceId, spaceStatus }: InterestButtonP
       disabled={loading}
       className="w-full gap-2"
       size="lg"
-      variant="amber"
+      variant="default"
     >
       <Zap className="h-4 w-4" />
       {loading ? 'Enviando...' : 'Demonstrar Interesse'}

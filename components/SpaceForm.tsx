@@ -252,7 +252,7 @@ export default function SpaceForm({
       {space && (
         <div className="space-y-2">
           <Label>Status do espaço</Label>
-          <Select value={status} onValueChange={setStatus}>
+          <Select value={status} onValueChange={(v) => setStatus(v as 'available' | 'negotiating' | 'rented')}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

@@ -1,171 +1,85 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { toast } from 'sonner'
+import { useState, useRef, useEffect } from 'react'
 import { Send } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { sendMessage } from '@/app/actions/messages'
-import { createClient } from '@/lib/supabase/client'
-import { timeAgo } from '@/lib/utils'
+import { MOCK_OWNER, MOCK_COMPANY } from '@/lib/mock-data'
 
 interface Message {
   id: string
-  interest_id: string
   sender_id: string
   content: string
-  read_at: string | null
   created_at: string
-  profiles: { id: string; name: string } | null
-}
-
-interface ChatWindowProps {
-  interestId: string
-  initialMessages: Message[]
-  currentUserId: string
 }
 
 export default function ChatWindow({
-  interestId,
   initialMessages,
-  currentUserId,
-}: ChatWindowProps) {
+  interestId,
+}: {
+  initialMessages: Message[]
+  interestId: string
+}) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
-  const [content, setContent] = useState('')
-  const [sending, setSending] = useState(false)
+  const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
+  const currentUserId = typeof window !== 'undefined'
+    ? (localStorage.getItem('ts_demo_role') === 'owner' ? MOCK_OWNER.id : MOCK_COMPANY.id)
+    : MOCK_OWNER.id
 
-  const scrollToBottom = useCallback(() => {
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
+  }, [messages])
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, scrollToBottom])
-
-  // Poll for new messages every 5 seconds
-  useEffect(() => {
-    const poll = async () => {
-      const { data } = await supabase
-        .from('messages')
-        .select('*, profiles(id, name)')
-        .eq('interest_id', interestId)
-        .order('created_at', { ascending: true })
-
-      if (data) {
-        setMessages(data as Message[])
-      }
-    }
-
-    const interval = setInterval(poll, 5000)
-    return () => clearInterval(interval)
-  }, [interestId, supabase])
-
-  async function handleSend() {
-    if (!content.trim()) return
-    setSending(true)
-    const text = content.trim()
-    setContent('')
-
-    // Optimistic update
-    const optimistic: Message = {
-      id: `temp-${Date.now()}`,
-      interest_id: interestId,
-      sender_id: currentUserId,
-      content: text,
-      read_at: null,
-      created_at: new Date().toISOString(),
-      profiles: null,
-    }
-    setMessages((prev) => [...prev, optimistic])
-
-    const result = await sendMessage(interestId, text)
-    if (result?.error) {
-      toast.error(result.error)
-      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
-      setContent(text)
-    }
-
-    setSending(false)
+  function handleSend() {
+    const text = input.trim()
+    if (!text) return
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `msg-${Date.now()}`,
+        sender_id: currentUserId,
+        content: text,
+        created_at: new Date().toISOString(),
+      },
+    ])
+    setInput('')
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
+  function formatTime(iso: string) {
+    return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   }
 
   return (
-    <>
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-          {messages.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-stone-400 text-sm">
-                Nenhuma mensagem ainda. Comece a conversa!
-              </p>
-            </div>
-          )}
-          {messages.map((msg) => {
-            const isMe = msg.sender_id === currentUserId
-            return (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-                    isMe
-                      ? 'bg-terreo-800 text-white rounded-br-sm'
-                      : 'bg-white border border-stone-200 text-stone-800 rounded-bl-sm shadow-sm'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                </div>
-                <p className="mt-1 text-xs text-stone-400 px-1">
-                  {!isMe && msg.profiles?.name && (
-                    <span className="mr-1 font-medium">{msg.profiles.name}</span>
-                  )}
-                  {timeAgo(msg.created_at)}
-                  {isMe && msg.read_at && (
-                    <span className="ml-1 text-terreo-400">✓ lido</span>
-                  )}
-                </p>
+    <div className="flex flex-1 flex-col overflow-hidden bg-stone-50">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {messages.map((msg) => {
+          const isMe = msg.sender_id === currentUserId
+          return (
+            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-terreo-800 text-white rounded-br-sm' : 'bg-white border border-stone-200 text-stone-800 rounded-bl-sm shadow-sm'}`}>
+                <p className="text-sm leading-relaxed">{msg.content}</p>
+                <p className={`mt-1 text-right text-[10px] ${isMe ? 'text-terreo-300' : 'text-stone-400'}`}>{formatTime(msg.created_at)}</p>
               </div>
-            )
-          })}
-          <div ref={bottomRef} />
-        </div>
+            </div>
+          )
+        })}
+        <div ref={bottomRef} />
       </div>
 
-      {/* Input area */}
-      <div className="border-t border-stone-200 bg-white p-4">
-        <div className="mx-auto max-w-3xl flex gap-3 items-end">
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"
-            rows={1}
-            className="min-h-[44px] max-h-32 resize-none flex-1"
-            style={{ height: 'auto' }}
+      <div className="border-t border-stone-200 bg-white px-4 py-3">
+        <div className="flex items-center gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+            placeholder="Digite uma mensagem..."
+            className="flex-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-terreo-500"
           />
-          <Button
-            onClick={handleSend}
-            disabled={sending || !content.trim()}
-            size="icon"
-            className="h-11 w-11 shrink-0"
-          >
+          <button onClick={handleSend} className="flex h-10 w-10 items-center justify-center rounded-xl bg-terreo-800 text-white hover:bg-terreo-900 transition-colors">
             <Send className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
-        <p className="mx-auto max-w-3xl text-xs text-stone-400 mt-2">
-          Mensagens são atualizadas automaticamente a cada 5 segundos
-        </p>
+        <p className="mt-1.5 text-center text-[10px] text-stone-400">Demo — mensagens não são salvas</p>
       </div>
-    </>
+    </div>
   )
 }

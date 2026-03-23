@@ -53,7 +53,7 @@ export async function updateInterestStatus(
 
   if (!interest) return { error: 'Interesse não encontrado' }
 
-  const space = interest.spaces as { owner_id: string } | null
+  const space = (interest.spaces as unknown) as { owner_id: string } | null
   if (space?.owner_id !== user.id) return { error: 'Não autorizado' }
 
   const { error } = await supabase

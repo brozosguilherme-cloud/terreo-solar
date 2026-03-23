@@ -23,7 +23,7 @@ export async function sendMessage(interestId: string, content: string) {
   if (!interest) return { error: 'Conversa não encontrada' }
   if (interest.status !== 'accepted') return { error: 'Conversa não está ativa' }
 
-  const space = interest.spaces as { owner_id: string } | null
+  const space = (interest.spaces as unknown) as { owner_id: string } | null
   const isParticipant =
     interest.company_id === user.id || space?.owner_id === user.id
 

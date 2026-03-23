@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogOut, LayoutDashboard, Search, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
 
 interface NavbarProps {
@@ -27,12 +26,12 @@ function Logo() {
 
 export default function Navbar({ profile }: NavbarProps) {
   const router = useRouter()
-  const supabase = createClient()
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
+  function handleSignOut() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ts_demo_role')
+    }
+    router.push('/login')
   }
 
   return (
