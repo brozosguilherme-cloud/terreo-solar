@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand:       #004254;
+    --brand-light: #005570;
+    --brand-muted: #e8f4f7;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    @apply bg-stone-50 text-stone-900 antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-terreo-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terreo-900 focus:outline-none focus:ring-2 focus:ring-terreo-800 focus:ring-offset-2 disabled:opacity-50;
+  }
+
+  .card {
+    @apply rounded-xl border border-stone-200 bg-white shadow-sm;
+  }
+
+  .input-base {
+    @apply flex h-10 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-terreo-800 focus:border-transparent;
+  }
+}
+
+@layer utilities {
+  /* Radix UI animation support */
+  .animate-in {
+    animation-duration: 200ms;
+    animation-fill-mode: both;
+  }
+  .fade-in-0    { animation-name: fadeIn; }
+  .fade-out-0   { animation-name: fadeOut; }
+  .zoom-in-95   { animation-name: zoomIn; }
+  .zoom-out-95  { animation-name: zoomOut; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  @keyframes zoomIn {
+    from { transform: translate(-50%, -50%) scale(0.95); }
+    to   { transform: translate(-50%, -50%) scale(1); }
+  }
+  @keyframes zoomOut {
+    from { transform: translate(-50%, -50%) scale(1); }
+    to   { transform: translate(-50%, -50%) scale(0.95); }
+  }
+}
