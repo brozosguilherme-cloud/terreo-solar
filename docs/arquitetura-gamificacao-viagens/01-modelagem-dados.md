@@ -311,8 +311,9 @@ begin
    order by c.created_at desc limit 1;
 
   if found then
+    -- piso de ~7s no denominador evita falso positivo em leituras quase simultâneas
     v_speed_kmh := (st_distance(v_last.geo, v_point) / 1000.0)
-                   / greatest(extract(epoch from (now() - v_last.created_at)) / 3600.0, 0.001);
+                   / greatest(extract(epoch from (now() - v_last.created_at)) / 3600.0, 0.002);
     if v_speed_kmh > 900 then
       v_status := 'flagged';
     end if;

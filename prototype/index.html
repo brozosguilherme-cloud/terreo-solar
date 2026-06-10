@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TravelQuest — Protótipo local (dados mockados)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">🧭 TravelQuest <span class="tag">protótipo · dados mockados · sem backend</span></div>
+  <nav class="topnav">
+    <button id="nav-app" class="active">📱 App</button>
+    <button id="nav-admin">🛠️ Admin</button>
+  </nav>
+  <button id="btn-reset" class="ghost" title="Restaura os dados de exemplo">↺ Resetar demo</button>
+</header>
+
+<main>
+  <!-- ======================= APP ======================= -->
+  <section id="view-app" class="view">
+    <div class="phone-wrap">
+      <div class="phone">
+        <div id="screen-home" class="screen"></div>
+        <div id="screen-map" class="screen hidden"><div id="appmap"></div></div>
+        <div id="screen-profile" class="screen hidden"></div>
+
+        <div id="sheet" class="sheet hidden"></div>
+        <div id="celebration" class="celebration hidden"></div>
+        <div id="toasts"></div>
+
+        <nav class="tabbar">
+          <button data-tab="home" class="active">🏠<span>Início</span></button>
+          <button data-tab="map">🗺️<span>Mapa</span></button>
+          <button data-tab="profile">👤<span>Perfil</span></button>
+        </nav>
+      </div>
+    </div>
+
+    <aside class="simpanel">
+      <h3>🛰️ Simulador de GPS</h3>
+      <p class="muted">No app real isto é o <code>watchPosition()</code>. Aqui você controla a posição
+      do usuário para testar o geofencing sem sair da cadeira. <b>Arraste o marcador azul</b> no mapa
+      do app, ou use o teleporte:</p>
+
+      <label class="field">Teleporte rápido
+        <select id="sim-teleport"></select>
+      </label>
+
+      <div class="sim-row">📍 Posição: <span id="sim-pos" class="mono"></span></div>
+
+      <label class="field">Precisão do GPS: <b id="sim-acc-label">15 m</b>
+        <input type="range" id="sim-acc" min="5" max="150" step="5" value="15">
+        <span class="hint">&gt; 50 m = aviso de GPS impreciso · &gt; 100 m = servidor rejeita</span>
+      </label>
+
+      <label class="check"><input type="checkbox" id="sim-mock">
+        Simular <b>mock location</b> (app de GPS falso)</label>
+
+      <div class="sim-row">🕐 Relógio virtual: <b id="sim-clock"></b></div>
+      <div class="btnrow">
+        <button class="small" data-skew="300000">+5 min</button>
+        <button class="small" data-skew="3600000">+1 h</button>
+        <button class="small" data-skew="86400000">+1 dia</button>
+      </div>
+      <p class="hint">Saltos grandes de posição <b>sem avançar o relógio</b> disparam a detecção de
+      "viagem impossível" e o check-in cai na fila de revisão ⚠️ (Admin → Revisão).</p>
+
+      <details class="roteiro">
+        <summary>📋 Roteiro de testes (10 cenários)</summary>
+        <ol>
+          <li><b>Check-in feliz:</b> teleporte para o Theatro Municipal → botão fica verde → check-in → +30 pts e missão 1/5.</li>
+          <li><b>Fora do raio:</b> arraste o marcador ~200 m para longe → botão desabilita mostrando a distância. Use "🧪 testar mesmo assim" para ver o servidor rejeitar com <code>OUT_OF_RANGE</code>.</li>
+          <li><b>GPS impreciso:</b> suba a precisão para 150 m → servidor rejeita com <code>LOW_GPS_ACCURACY</code>.</li>
+          <li><b>Tolerância:</b> com precisão 50 m, faça check-in um pouco fora do raio — o servidor absorve (raio + min(accuracy, 50)).</li>
+          <li><b>Viagem impossível:</b> check-in no Centro → teleporte direto para o Ibirapuera → check-in → concedido mas <b>⚠️ sinalizado</b>. Avance o relógio +1 h e repita em outro lugar: passa limpo.</li>
+          <li><b>Mock location:</b> ligue o toggle → próximo check-in nasce sinalizado.</li>
+          <li><b>Completar missão:</b> visite os 5 locais do Centro Histórico → modal de conquista + 200 pts de bônus.</li>
+          <li><b>Admin → app:</b> crie um local no Admin, publique, volte ao app → vira card avulso e pin no mapa.</li>
+          <li><b>Revogação:</b> Admin → Revisão → revogue um check-in sinalizado → pontos estornados no extrato (Perfil); se uma conquista dependia dele, é revogada junto.</li>
+          <li><b>Missão futura:</b> os locais do "Festival de Inverno" estão 🔒. Avance o relógio +1 dia ×21 → eles desbloqueiam.</li>
+        </ol>
+      </details>
+    </aside>
+  </section>
+
+  <!-- ======================= ADMIN ======================= -->
+  <section id="view-admin" class="view hidden">
+    <nav class="admin-tabs">
+      <button data-atab="places" class="active">📍 Locais</button>
+      <button data-atab="missions">🏆 Conquistas</button>
+      <button data-atab="review">🚩 Revisão <span id="flag-count" class="badge-count hidden"></span></button>
+    </nav>
+    <div id="admin-content"></div>
+  </section>
+</main>
+
+<div id="modal-root"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/backend.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
