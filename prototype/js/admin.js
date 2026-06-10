@@ -37,10 +37,10 @@
         <h2>📍 Locais (Check-ins Simples)</h2>
         <button class="btn-primary" data-new>+ Novo local</button>
       </div>
-      <table class="admin">
+      <div class="table-scroll"><table class="admin">
         <thead><tr><th>Local</th><th>Status</th><th>Pontos</th><th>Raio</th><th>Visibilidade</th><th>Missões</th><th>Check-ins</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
-      </table>
+      </table></div>
     </div>`;
 
     el.querySelector('[data-new]').onclick = () => openPlaceModal();

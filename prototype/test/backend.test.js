@@ -131,6 +131,23 @@ const at = (placeId, over) => {
   ok(rFest.achievements_progress.some((a) => a.achievement_id === 'm3'),
     'check-in passa a contar para a missão sazonal');
 
+  console.log('\n— Realocação da demo (teste com GPS real em qualquer cidade) —');
+  const pA = { ...B._db().places.find((x) => x.id === 'p1') };
+  const pB = { ...B._db().places.find((x) => x.id === 'p2') };
+  const target = { lat: -30.0277, lng: -51.2287 }; // Porto Alegre
+  B.relocateDemo(target.lat, target.lng);
+  const pA2 = B._db().places.find((x) => x.id === 'p1');
+  const pB2 = B._db().places.find((x) => x.id === 'p2');
+  ok(Math.abs(pA2.lat - target.lat) < 1e-9 && Math.abs(pA2.lng - target.lng) < 1e-9,
+    'âncora (p1) cai exatamente na posição alvo');
+  ok(Math.abs((pB2.lat - pA2.lat) - (pB.lat - pA.lat)) < 1e-9 &&
+     Math.abs((pB2.lng - pA2.lng) - (pB.lng - pA.lng)) < 1e-9,
+    'geometria relativa entre locais é preservada');
+  B.addSkew(3600 * 1000); // evita flag de velocidade após o "salto" da realocação
+  const p6r = B._db().places.find((x) => x.id === 'p6');
+  const rReloc = await B.performCheckin('p6', { lat: p6r.lat + 0.0001, lng: p6r.lng + 0.0001, accuracy_m: 15 });
+  ok(rReloc.checkin.status === 'confirmed', 'check-in funciona nas novas coordenadas');
+
   console.log(`\n${'─'.repeat(40)}\n${passed} passaram · ${failed} falharam\n`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error('Erro fatal no teste:', e); process.exit(1); });

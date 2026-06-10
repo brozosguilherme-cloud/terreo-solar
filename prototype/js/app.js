@@ -7,6 +7,7 @@
   // ───────────── Simulador de GPS ─────────────
   globalThis.Sim = {
     lat: -23.5495, lng: -46.6355, accuracy: 15, mock: false,
+    mode: 'sim', // 'sim' (marcador/teleporte) | 'real' (watchPosition do aparelho)
     setPos(lat, lng, opts) {
       this.lat = lat; this.lng = lng;
       if (userMarker) userMarker.setLatLng([lat, lng]);
@@ -14,6 +15,54 @@
       Bus.emit('sim:moved');
     },
   };
+
+  // ───────────── GPS real (celular / localhost) ─────────────
+  let watchId = null, firstFix = false;
+
+  function canUseRealGps() {
+    if (!('geolocation' in navigator)) { toast('❌ Este navegador não expõe geolocalização.', 'err'); return false; }
+    if (!window.isSecureContext) {
+      toast('❌ GPS real exige HTTPS (GitHub Pages / túnel) ou localhost — em http:// pela rede local o navegador bloqueia.', 'err');
+      return false;
+    }
+    return true;
+  }
+
+  function setRealMode(on) {
+    const cb = document.getElementById('sim-real');
+    const slider = document.getElementById('sim-acc');
+    const status = document.getElementById('real-status');
+    if (on) {
+      if (!canUseRealGps()) { cb.checked = false; return; }
+      Sim.mode = 'real'; firstFix = false;
+      slider.disabled = true;
+      if (userMarker && userMarker.dragging) userMarker.dragging.disable();
+      status.textContent = '⏳ Aguardando primeira leitura do GPS…';
+      watchId = navigator.geolocation.watchPosition((pos) => {
+        Sim.accuracy = Math.max(5, Math.round(pos.coords.accuracy || 15));
+        const lbl = document.getElementById('sim-acc-label');
+        if (lbl) lbl.textContent = Sim.accuracy + ' m (real)';
+        status.textContent = `📡 GPS real ativo — precisão ${Sim.accuracy} m. Ande até um local para o botão habilitar.`;
+        Sim.setPos(pos.coords.latitude, pos.coords.longitude, { pan: !firstFix });
+        firstFix = true;
+      }, (err) => {
+        toast('❌ GPS: ' + esc(err.message), 'err');
+        setRealMode(false);
+      }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
+      cb.checked = true;
+    } else {
+      if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+      Sim.mode = 'sim';
+      slider.disabled = false;
+      Sim.accuracy = Number(slider.value);
+      const lbl = document.getElementById('sim-acc-label');
+      if (lbl) lbl.textContent = Sim.accuracy + ' m';
+      if (userMarker && userMarker.dragging) userMarker.dragging.enable();
+      status.textContent = 'GPS real desligado — usando o marcador simulado.';
+      cb.checked = false;
+      Bus.emit('sim:moved');
+    }
+  }
 
   // ───────────── estado da view ─────────────
   let activeTab = 'home';
@@ -148,6 +197,7 @@
       Sim.lat = ll.lat; Sim.lng = ll.lng;
       Bus.emit('sim:moved');
     });
+    if (Sim.mode === 'real' && userMarker.dragging) userMarker.dragging.disable();
     refreshMarkers();
   }
 
@@ -410,6 +460,8 @@
     document.getElementById('sim-teleport').addEventListener('change', (e) => {
       const v = e.target.value;
       if (!v) return;
+      if (Sim.mode === 'real') { setRealMode(false); toast('📡 GPS real desligado para teleportar.', ''); }
+      document.querySelector('.simpanel').classList.remove('open'); // fecha a gaveta no mobile
       if (v === '__start') { Sim.setPos(-23.5495, -46.6355, { pan: true }); return; }
       const p = Backend.adminListPlaces().find((x) => x.id === v);
       if (p) {
@@ -417,6 +469,33 @@
         if (activeTab !== 'map') switchTab('map');
       }
     });
+
+    // GPS real + realocação da demo
+    document.getElementById('sim-real').addEventListener('change', (e) => setRealMode(e.target.checked));
+    document.getElementById('btn-relocate').addEventListener('click', () => {
+      const apply = (lat, lng, label) => {
+        const anchor = Backend.relocateDemo(lat, lng);
+        Sim.setPos(lat, lng, { pan: true });
+        document.querySelector('.simpanel').classList.remove('open');
+        if (activeTab !== 'map') switchTab('map');
+        toast(`🏠 Demo realocada (${label}): "${esc(anchor)}" agora está na sua posição — você já está no raio dele!`, 'ok');
+      };
+      if (Sim.mode === 'real') return apply(Sim.lat, Sim.lng, 'GPS real');
+      if ('geolocation' in navigator && window.isSecureContext) {
+        navigator.geolocation.getCurrentPosition(
+          (p) => apply(p.coords.latitude, p.coords.longitude, 'GPS real'),
+          () => apply(Sim.lat, Sim.lng, 'posição simulada'),
+          { enableHighAccuracy: true, timeout: 12000 });
+      } else {
+        apply(Sim.lat, Sim.lng, 'posição simulada');
+      }
+    });
+
+    // gaveta do simulador (mobile)
+    const fab = document.getElementById('sim-fab');
+    if (fab) fab.onclick = () => document.querySelector('.simpanel').classList.add('open');
+    const sclose = document.getElementById('sim-close');
+    if (sclose) sclose.onclick = () => document.querySelector('.simpanel').classList.remove('open');
     document.getElementById('sim-acc').addEventListener('input', (e) => {
       Sim.accuracy = Number(e.target.value);
       document.getElementById('sim-acc-label').textContent = Sim.accuracy + ' m';

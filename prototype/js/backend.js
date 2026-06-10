@@ -525,12 +525,24 @@
     return { reversed_points: c.points_awarded, revoked_achievements: revokedAchievements };
   }
 
+  /* Translada todos os locais para que a âncora (1º local da demo) caia em
+   * (lat, lng) — permite testar geofencing andando de verdade, em qualquer cidade. */
+  function relocateDemo(lat, lng) {
+    const anchor = placeById('p1') || db.places[0];
+    if (!anchor) return;
+    const dLat = lat - anchor.lat, dLng = lng - anchor.lng;
+    db.places.forEach((p) => { p.lat += dLat; p.lng += dLng; });
+    save();
+    return anchor.name;
+  }
+
   // ───────────── exports ─────────────
   globalThis.Backend = {
     init: load,
     reset() { db = SEED(); save(); },
     now, nowIso,
     addSkew(ms) { db.clock_skew_ms = (db.clock_skew_ms || 0) + ms; save(); },
+    relocateDemo,
     haversine, fmtDist,
     // app
     getHomeFeed, getMapPins, getPlaceDetail, getAchievementDetail,

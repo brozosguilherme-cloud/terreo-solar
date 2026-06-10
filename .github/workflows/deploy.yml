@@ -25,6 +25,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # protótipo estático da gamificação de viagens → /terreo-solar/prototype/
+      - run: cp -r prototype out/prototype
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out

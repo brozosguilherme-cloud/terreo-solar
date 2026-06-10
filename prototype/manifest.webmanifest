@@ -1,0 +1,13 @@
+{
+  "name": "TravelQuest — Protótipo",
+  "short_name": "TravelQuest",
+  "description": "Protótipo de gamificação de viagens com dados mockados",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1e1b4b",
+  "theme_color": "#1e1b4b",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
