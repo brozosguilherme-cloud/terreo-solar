@@ -128,6 +128,7 @@
           : pr.completed > 0 ? 'in_progress' : 'not_started';
         return {
           id: a.id, name: a.name, badge: a.badge, bonus_points: a.bonus_points,
+          cover_image_url: a.cover_image_url,
           starts_at: a.starts_at, ends_at: a.ends_at, window: w,
           progress: { completed: pr.completed, total: pr.needed },
           user_status, nearest_pending_place: nearest,
@@ -143,6 +144,7 @@
       .filter((p) => !membershipsOf(p.id).some(isCounting))
       .map((p) => ({
         id: p.id, name: p.name, emoji: p.emoji, category: p.category,
+        photo_url: p.photo_url,
         base_points: p.base_points, lat: p.lat, lng: p.lng,
         distance_m: pos ? haversine(pos.lat, pos.lng, p.lat, p.lng) : null,
         user_status: checkedIn(p.id) ? 'completed' : 'available',
@@ -203,12 +205,14 @@
     const pr = missionProgress(a);
     return {
       id: a.id, name: a.name, badge: a.badge, description: a.description,
+      cover_image_url: a.cover_image_url,
       bonus_points: a.bonus_points, window: windowState(a),
       starts_at: a.starts_at, ends_at: a.ends_at,
       progress: { completed: pr.completed, total: pr.needed },
       unlocked: pr.unlocked, unlockedAt: pr.unlockedAt,
       places: pr.members.map((p) => ({
         id: p.id, name: p.name, emoji: p.emoji, base_points: p.base_points,
+        photo_url: p.photo_url,
         user_status: checkedIn(p.id) ? 'completed' : (placeUserStatus(p) || 'available'),
         distance_m: pos ? haversine(pos.lat, pos.lng, p.lat, p.lng) : null,
       })),

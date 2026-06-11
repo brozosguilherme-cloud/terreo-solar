@@ -173,56 +173,134 @@
     </div>`;
   }
 
-  function renderHome(entering) {
-    const el = document.getElementById('screen-home');
-    const st = el.scrollTop;
-    const feed = Backend.getHomeFeed(Sim);
-    const lvl = levelInfo(Backend.getStats().points);
+  // ───────────── home v3 (editorial photo-first) ─────────────
+  let homeQuery = '';
+  let homeCat = 'todos';
+  const CATS = [
+    ['todos', 'Todos'], ['historico', 'Histórico'], ['cultura', 'Cultura'],
+    ['gastronomia', 'Gastronomia'], ['natureza', 'Natureza'], ['evento', 'Evento'],
+  ];
 
-    const missions = feed.missions.map((m) => {
+  function homeFiltered() {
+    const feed = Backend.getHomeFeed(Sim);
+    const q = homeQuery.trim().toLowerCase();
+    const missions = feed.missions.filter((m) => !q || m.name.toLowerCase().includes(q));
+    const places = feed.standalone_places.filter((p) =>
+      (homeCat === 'todos' || p.category === homeCat) &&
+      (!q || p.name.toLowerCase().includes(q)));
+    return { missions, places };
+  }
+
+  function missionCardsHtml(missions) {
+    return missions.map((m) => {
       const pct = m.progress.total ? Math.round((m.progress.completed / m.progress.total) * 100) : 0;
       const glow = recentlyUpdated[m.id] && Date.now() - recentlyUpdated[m.id] < 9000 ? 'glow-new' : '';
-      const body = m.user_status === 'upcoming'
-        ? `<div class="nearest">${ic('lock')} Abre em ${fmtDate(m.starts_at)}<span class="dist">bônus +${m.bonus_points}</span></div>`
-        : `<div class="bar slim"><div style="width:${pct}%"></div></div>
-           <div class="nums"><span><b>${m.progress.completed}</b>/${m.progress.total} check-ins</span><span>bônus <b>+${m.bonus_points} pts</b></span></div>
-           ${m.nearest_pending_place ? `<div class="nearest">${ic('map-pin')} ${esc(m.nearest_pending_place.name)}<span class="dist">${fmtDist(m.nearest_pending_place.distance_m)}</span></div>` : ''}`;
-      return `<div class="m-card ${glow}" data-mission="${m.id}">
-        <div class="top"><div class="m-emoji">${m.badge}</div>
-          <div><div class="ttl">${esc(m.name)}</div><div class="sub">${m.progress.total} locais</div></div>
-          <span class="chipwrap">${chipFor(m.user_status)}</span>
-        </div>${body}</div>`;
-    }).join('') || '<p class="muted">Nenhuma missão ativa.</p>';
+      const glass = m.user_status === 'upcoming'
+        ? `<div class="ph-t">${esc(m.name)}</div>
+           <div class="ph-m">${ic('lock')} Abre em ${fmtDate(m.starts_at)} · +${m.bonus_points} pts</div>`
+        : `<div class="ph-t">${esc(m.name)}</div>
+           <div class="ph-m">${ic('map-pin')} ${m.progress.total} locais · bônus +${m.bonus_points}</div>
+           <div class="ph-bar"><div style="width:${pct}%"></div></div>
+           <div class="ph-pm"><span>${m.progress.completed}/${m.progress.total} check-ins</span><span>${pct}%</span></div>`;
+      return `<div class="ph-card ${glow}" data-mission="${m.id}">
+        <img src="${m.cover_image_url || ''}" loading="lazy" alt="" onerror="this.remove()">
+        <div class="ph-badge">${m.badge}</div>
+        ${m.user_status === 'completed' ? '<div class="ph-done">✓</div>' : ''}
+        <div class="ph-glass">${glass}</div>
+      </div>`;
+    }).join('') || '<p class="muted" style="padding:10px 4px">Nenhuma missão encontrada.</p>';
+  }
 
-    const places = feed.standalone_places.map((p) => `
+  function exploreRowsHtml(places) {
+    return places.map((p) => `
       <div class="p-row ${p.user_status === 'completed' ? 'done' : ''}" data-place="${p.id}">
-        <div class="p-emoji">${p.emoji}</div>
+        <div class="p-thumb"><span class="pe">${p.emoji}</span><img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()"></div>
         <div class="info"><div class="nm">${esc(p.name)}</div>
           <div class="mt">${esc(p.category)} · ${fmtDist(p.distance_m)}</div></div>
         <div class="right">${p.user_status === 'completed'
           ? `<div class="done-ic">${ic('check')}</div>`
           : `<div class="pts">+${p.base_points} pts</div>`}</div>
-      </div>`).join('') || '<p class="muted">Nenhum local avulso por aqui.</p>';
+      </div>`).join('') || '<p class="muted">Nada por aqui com esse filtro.</p>';
+  }
 
-    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="app-head">
-        <div class="greet">Olá, viajante 👋<small>Pronto para a próxima descoberta?</small></div>
-        <span class="level-pill">${lvl.emoji} ${esc(lvl.name)}</span>
-      </div>
-      ${xpCard()}
-      ${statsRow()}
-      ${Sim.accuracy > 50 ? '<div class="gps-warn">📡 Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
-      <div class="sec"><h3>Missões</h3><p>Complete trilhas de check-ins e ganhe badges</p></div>
-      ${missions}
-      <div class="sec"><h3>Para explorar</h3><p>Locais avulsos perto de você</p></div>
-      ${places}
-    </div>`;
-    el.scrollTop = st;
-
+  function bindHomeLists(el) {
     el.querySelectorAll('[data-mission]').forEach((c) =>
       c.addEventListener('click', () => openMissionDetail(c.dataset.mission)));
     el.querySelectorAll('[data-place]').forEach((c) =>
       c.addEventListener('click', () => openSheet(c.dataset.place)));
+  }
+
+  /* atualiza só as listas (preserva o foco da busca enquanto digita) */
+  function updateHomeLists() {
+    const el = document.getElementById('screen-home');
+    const { missions, places } = homeFiltered();
+    const mEl = el.querySelector('#home-missions');
+    if (mEl) mEl.innerHTML = missionCardsHtml(missions);
+    const pEl = el.querySelector('#home-explore');
+    if (pEl) pEl.innerHTML = exploreRowsHtml(places);
+    const cnt = el.querySelector('#home-count');
+    if (cnt) cnt.textContent = places.length + ' lugares';
+    bindHomeLists(el);
+    UI.refreshIcons();
+  }
+
+  function renderHome(entering) {
+    const el = document.getElementById('screen-home');
+    // digitando na busca: re-render completo roubaria o foco → só listas
+    if (!entering && el.querySelector('#home-search') === document.activeElement) {
+      updateHomeLists();
+      return;
+    }
+    const st = el.scrollTop;
+    const stats = Backend.getStats();
+    const lvl = levelInfo(stats.points);
+    const { missions, places } = homeFiltered();
+    const ringLen = ((lvl.pct / 100) * 131.9).toFixed(1);
+
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
+      <div class="home-top">
+        <div><div class="hi">Olá, viajante 👋</div>
+        <div class="hi-sub">Explore o mundo, colecione conquistas</div></div>
+        <button class="avatar-ring" data-profile title="${lvl.name} · ${lvl.pct}%">
+          <svg viewBox="0 0 48 48"><circle class="rbg" cx="24" cy="24" r="21"/><circle class="rfg" cx="24" cy="24" r="21" stroke-dasharray="${ringLen} 131.9"/></svg>
+          <span class="em">🧭</span>
+        </button>
+      </div>
+      <div class="searchbar">
+        ${ic('search')}
+        <input id="home-search" placeholder="Buscar lugares e missões" value="${esc(homeQuery)}" autocomplete="off">
+        <button class="sfilter" data-sfilter>${ic('sliders-horizontal')}</button>
+      </div>
+      <div class="level-strip">
+        <div class="ls-info"><b>${lvl.emoji} ${esc(lvl.name)}</b>
+          <span>${lvl.max ? stats.points + ' XP' : `<span data-cuk="xp" data-cuv="${lvl.cur}">${lvl.cur}</span> / ${lvl.need} XP`}</span></div>
+        <div class="ls-bar"><div style="width:${lvl.pct}%"></div></div>
+      </div>
+      <div class="chips">${CATS.map(([k, label]) =>
+        `<button class="chip ${homeCat === k ? 'on' : ''}" data-cat="${k}">${label}</button>`).join('')}</div>
+      ${Sim.accuracy > 50 ? '<div class="gps-warn">📡 Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
+      <div class="sec row"><h3>Missões em destaque</h3><span class="link" data-see-map>Ver no mapa</span></div>
+      <div class="mcarousel" id="home-missions">${missionCardsHtml(missions)}</div>
+      <div class="sec row"><h3>Para explorar</h3><span class="muted" id="home-count">${places.length} lugares</span></div>
+      <div id="home-explore">${exploreRowsHtml(places)}</div>
+    </div>`;
+    el.scrollTop = st;
+
+    bindHomeLists(el);
+    el.querySelector('[data-profile]').onclick = () => switchTab('profile');
+    el.querySelector('[data-see-map]').onclick = () => switchTab('map');
+    el.querySelector('[data-sfilter]').onclick = () =>
+      toast('🎛️ Filtros avançados (distância, pontos) chegam na v2', '');
+    el.querySelector('#home-search').addEventListener('input', (e) => {
+      homeQuery = e.target.value;
+      updateHomeLists();
+    });
+    el.querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => {
+      homeCat = b.dataset.cat;
+      buzz(8);
+      renderHome(false);
+      UI.refreshIcons();
+    });
   }
 
   function renderProfile(entering) {
@@ -457,8 +535,8 @@
       const p = Backend.getPlaceDetail(sheetState.id, Sim);
       if (p) {
         focusCircle = L.circle([p.lat, p.lng], {
-          radius: p.radius_m, color: '#E5973A', weight: 2,
-          fillColor: '#E5973A', fillOpacity: 0.1, dashArray: '6 6',
+          radius: p.radius_m, color: '#2D7FE0', weight: 2,
+          fillColor: '#2D7FE0', fillOpacity: 0.1, dashArray: '6 6',
         }).addTo(map);
       }
     }
@@ -485,9 +563,9 @@
 
   function renderSheet() {
     const el = document.getElementById('sheet');
-    if (!sheetState) { el.classList.add('hidden'); return; }
+    if (!sheetState) { el.classList.add('hidden'); el.classList.remove('page'); return; }
     el.classList.remove('hidden');
-    el.classList.toggle('tall', sheetState.type === 'mission');
+    el.classList.add('page'); // detalhes são páginas photo-first (v3)
     if (sheetState.type === 'place') renderPlaceSheet(el);
     else renderMissionSheet(el);
     UI.refreshIcons();
@@ -506,7 +584,7 @@
     let action = '';
     if (d.user_status === 'completed') {
       const flaggedNote = d.checkin && d.checkin.status === 'flagged' ? ' · ⚠️ em revisão' : '';
-      action = `<button class="btn-checkin done" disabled>✓ Check-in feito em ${fmtDate(d.checkin && d.checkin.created_at)} · +${d.checkin ? d.checkin.points_awarded : d.base_points} pts${flaggedNote}</button>`;
+      action = `<button class="btn-checkin done" disabled>✓ Visitado em ${fmtDate(d.checkin && d.checkin.created_at)} · +${d.checkin ? d.checkin.points_awarded : d.base_points} pts${flaggedNote}</button>`;
     } else if (d.user_status === 'locked') {
       const up = d.missions.find((m) => m.window === 'upcoming');
       action = `<button class="btn-checkin locked" disabled>🔒 ${up ? 'Disponível a partir de ' + fmtDate(up.starts_at) : 'Indisponível'}</button>
@@ -517,7 +595,7 @@
       const dist = d.distance_m;
       const ready = inRange(d.id, dist, d.radius_m);
       if (ready) {
-        action = `<button class="btn-checkin ready" data-checkin>Fazer check-in · +${d.base_points} pts</button>`;
+        action = `<button class="btn-checkin ready" data-checkin>Fazer check-in agora · +${d.base_points} pts</button>`;
       } else {
         action = `<button class="btn-checkin" disabled>Você está a ${fmtDist(dist)} — chegue mais perto</button>
           <button class="btn-secondary" data-route>${ic('navigation')} Como chegar</button>
@@ -526,27 +604,38 @@
     }
 
     el.innerHTML = `
-      <div class="grab"></div>
-      <button class="close" data-close>✕</button>
-      ${sheetState.from ? `<span class="backlink" data-back>‹ voltar para a missão</span>` : ''}
-      <div class="sheet-head">
-        <div class="s-emoji">${d.emoji}</div>
-        <div><h2>${esc(d.name)}</h2><div class="addr">${esc(d.address)}</div></div>
+      <div class="hero">
+        <span class="hero-fb">${d.emoji}</span>
+        <img src="${d.photo_url || ''}" alt="" onerror="this.remove()">
+        <div class="hero-shade"></div>
+        <button class="hbtn l" data-close>${ic('arrow-left')}</button>
+        <button class="hbtn r" data-fav>${ic('bookmark')}</button>
+        <div class="hero-info">
+          ${sheetState.from ? `<span class="hcrumb" data-back>${ic('trophy')} parte de uma missão — voltar</span>` : ''}
+          <div class="ht">${esc(d.name)}</div>
+          <div class="hrow">
+            <span class="haddr">${ic('map-pin')} ${esc(d.address)}</span>
+            <span class="hpts">+${d.base_points} pts</span>
+          </div>
+        </div>
       </div>
-      <div class="factrow">
-        <span class="fact">${ic('sparkles')} ${d.base_points} pts</span>
-        <span class="fact">${ic('target')} ${d.radius_m} m</span>
-        <span class="fact">${ic('footprints')} ${fmtDist(d.distance_m)}</span>
-        <span class="fact">${ic('tag')} ${esc(d.category)}</span>
-      </div>
-      ${missionsCtx}
-      <div class="desc">${esc(d.description)}</div>
-      ${Sim.accuracy > 50 && d.user_status === 'available' ? '<div class="gps-warn">📡 GPS impreciso (' + Sim.accuracy + ' m) — o servidor tolera até raio + 50 m.</div>' : ''}
-      ${action}`;
+      <div class="page-body">
+        <div class="spills">
+          <span class="spill">${ic('footprints')} ${fmtDist(d.distance_m)}</span>
+          <span class="spill">${ic('target')} raio ${d.radius_m} m</span>
+          <span class="spill">${ic('tag')} ${esc(d.category)}</span>
+        </div>
+        ${missionsCtx}
+        <p class="desc">${esc(d.description)}</p>
+        ${Sim.accuracy > 50 && d.user_status === 'available' ? '<div class="gps-warn">📡 GPS impreciso (' + Sim.accuracy + ' m) — o servidor tolera até raio + 50 m.</div>' : ''}
+        ${action}
+      </div>`;
 
     el.querySelector('[data-close]').onclick = closeSheet;
     const back = el.querySelector('[data-back]');
     if (back) back.onclick = () => openMissionDetail(sheetState.from);
+    const fav = el.querySelector('[data-fav]');
+    if (fav) fav.onclick = () => toast('🔖 Favoritos chegam na v2', '');
     el.querySelectorAll('.mission-ctx').forEach((m) =>
       m.addEventListener('click', () => openMissionDetail(m.dataset.mission)));
     const btn = el.querySelector('[data-checkin]');
@@ -564,11 +653,10 @@
     const pct = d.progress.total ? Math.round((d.progress.completed / d.progress.total) * 100) : 0;
 
     const rows = d.places.map((p) => {
-      const stEl = p.user_status === 'completed' ? `<div class="st done">${ic('check')}</div>`
-        : p.user_status === 'locked' ? `<div class="st lock">${ic('lock')}</div>`
-        : `<div class="st">${p.emoji}</div>`;
+      const over = p.user_status === 'completed' ? '<span class="tover ok">✓</span>'
+        : p.user_status === 'locked' ? '<span class="tover lk">🔒</span>' : '';
       return `<div class="mission-place-row" data-place="${p.id}">
-        ${stEl}
+        <div class="p-thumb mini"><span class="pe">${p.emoji}</span><img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()">${over}</div>
         <span class="nm">${esc(p.name)}</span>
         <span class="ds">${p.user_status === 'completed' ? '+' + p.base_points + ' pts' : fmtDist(p.distance_m)}</span>
         <span class="chev">›</span>
@@ -576,20 +664,27 @@
     }).join('');
 
     el.innerHTML = `
-      <div class="grab"></div>
-      <button class="close" data-close>✕</button>
-      <div class="m-hero ${d.window === 'upcoming' ? 'locked' : ''}">
-        <div class="badge-big">${d.badge}</div>
-        <div><h2>${esc(d.name)}</h2>
-        <div class="addr">${d.window === 'upcoming' ? '🔒 Abre em ' + fmtDate(d.starts_at) : 'Bônus de conclusão: +' + d.bonus_points + ' pts'}</div></div>
+      <div class="hero">
+        <span class="hero-fb">${d.badge}</span>
+        <img src="${d.cover_image_url || ''}" alt="" onerror="this.remove()">
+        <div class="hero-shade"></div>
+        <button class="hbtn l" data-close>${ic('arrow-left')}</button>
+        <div class="hero-info">
+          <span class="hcrumb">${d.badge} Missão${d.window === 'upcoming' ? ' · em breve' : ''}</span>
+          <div class="ht">${esc(d.name)}</div>
+          <div class="hrow">
+            <span class="haddr">${d.window === 'upcoming' ? '🔒 Abre em ' + fmtDate(d.starts_at) : d.progress.completed + '/' + d.progress.total + ' check-ins · ' + pct + '%'}</span>
+            <span class="hpts">+${d.bonus_points} pts</span>
+          </div>
+          <div class="ph-bar"><div style="width:${pct}%"></div></div>
+        </div>
       </div>
-      <div class="desc">${esc(d.description)}</div>
-      ${d.unlocked ? `<div class="unlocked-banner">${ic('trophy')} Concluída em ${fmtDate(d.unlockedAt)} · +${d.bonus_points} pts creditados</div>` : ''}
-      <div class="bar slim" style="margin-top:14px"><div style="width:${pct}%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);font-weight:600;margin:7px 0 8px">
-        <span><b style="color:var(--ink)">${d.progress.completed}</b>/${d.progress.total} check-ins</span><span>${pct}%</span>
-      </div>
-      ${rows}`;
+      <div class="page-body">
+        ${d.unlocked ? `<div class="unlocked-banner">${ic('trophy')} Concluída em ${fmtDate(d.unlockedAt)} · +${d.bonus_points} pts creditados</div>` : ''}
+        <p class="desc" style="margin-top:0">${esc(d.description)}</p>
+        <div class="sec row" style="margin-top:10px"><h3>Roteiro</h3><span class="muted">${d.places.length} locais</span></div>
+        ${rows}
+      </div>`;
 
     el.querySelector('[data-close]').onclick = closeSheet;
     el.querySelectorAll('[data-place]').forEach((r) =>
@@ -803,6 +898,22 @@
     document.querySelectorAll('.tabbar button').forEach((b) =>
       b.addEventListener('click', () => switchTab(b.dataset.tab)));
     bindSimPanel();
+
+    // splash de identidade: 1x por sessão, toque pula
+    const splash = document.getElementById('splash');
+    if (splash) {
+      let seen = false;
+      try { seen = !!sessionStorage.getItem('tq_splash'); } catch (e) { /* file:// */ }
+      if (seen) {
+        splash.classList.add('hide');
+      } else {
+        try { sessionStorage.setItem('tq_splash', '1'); } catch (e) { /* ok */ }
+        setTimeout(() => splash.classList.add('hide'), 1700);
+        splash.addEventListener('click', () => splash.classList.add('hide'));
+      }
+    }
+
+    animateNext = true;
     render();
   }
 
