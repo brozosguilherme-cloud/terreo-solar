@@ -7,24 +7,63 @@
 
   // níveis de experiência (apresentação — XP = pontos do ledger)
   const LEVELS = [
-    { name: 'Iniciante', at: 0 },
-    { name: 'Aventureiro', at: 150 },
-    { name: 'Explorador', at: 400 },
-    { name: 'Guia Local', at: 800 },
-    { name: 'Lenda', at: 1500 },
+    { name: 'Iniciante', at: 0, emoji: '🐣' },
+    { name: 'Aventureiro', at: 150, emoji: '🥾' },
+    { name: 'Explorador', at: 400, emoji: '🧭' },
+    { name: 'Guia Local', at: 800, emoji: '🗺️' },
+    { name: 'Lenda', at: 1500, emoji: '👑' },
   ];
   function levelInfo(points) {
     let i = 0;
     while (i + 1 < LEVELS.length && points >= LEVELS[i + 1].at) i++;
     const cur = LEVELS[i], next = LEVELS[i + 1];
-    if (!next) return { name: cur.name, cur: points, need: points, pct: 100, max: true };
+    if (!next) return { name: cur.name, emoji: cur.emoji, cur: points, need: points, pct: 100, max: true };
     return {
-      name: cur.name, max: false,
+      name: cur.name, emoji: cur.emoji, max: false,
       cur: points - cur.at, need: next.at - cur.at,
       pct: Math.min(100, Math.round(((points - cur.at) / (next.at - cur.at)) * 100)),
     };
   }
-  const xpLabel = (lvl, pts) => lvl.max ? `${pts} XP` : `${lvl.cur} / ${lvl.need} XP`;
+
+  // ───────────── motion: contadores, voos e memória entre telas ─────────────
+  const prevCounts = {};       // última cifra exibida por contador (data-cuk)
+  const recentlyUpdated = {};  // achievementId → timestamp (glow na Home pós-check-in)
+  let animateNext = false;     // próxima renderização entra em cascata
+  let animatePins = false;     // pins caem ao abrir o mapa
+
+  const easeOut = (k) => 1 - Math.pow(1 - k, 3);
+  function runCounters(entering) {
+    document.querySelectorAll('#view-app [data-cuk]').forEach((el) => {
+      const key = el.dataset.cuk;
+      const to = Number(el.dataset.cuv);
+      const from = entering ? 0 : (prevCounts[key] != null ? prevCounts[key] : to);
+      prevCounts[key] = to;
+      if (from === to) { el.textContent = to; return; }
+      const t0 = performance.now(), dur = 750;
+      (function frame(t) {
+        const k = Math.min(1, (t - t0) / dur);
+        el.textContent = Math.round(from + (to - from) * easeOut(k));
+        if (k < 1) requestAnimationFrame(frame);
+      })(t0);
+    });
+  }
+
+  /* chip "+30" voa do botão de check-in em direção ao placar */
+  function flyPoints(fromRect, label) {
+    const phone = document.querySelector('.phone');
+    if (!phone || !fromRect) return;
+    const pr = phone.getBoundingClientRect();
+    const chip = document.createElement('div');
+    chip.className = 'fly-pts';
+    chip.textContent = label;
+    chip.style.left = (fromRect.left - pr.left + fromRect.width / 2 - 28) + 'px';
+    chip.style.top = (fromRect.top - pr.top - 8) + 'px';
+    chip.style.setProperty('--dy', '-' + Math.max(160, fromRect.top - pr.top - 90) + 'px');
+    phone.appendChild(chip);
+    setTimeout(() => chip.remove(), 1050);
+  }
+
+  const buzz = (pattern) => { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* iOS */ } };
 
   // ───────────── Simulador de GPS ─────────────
   globalThis.Sim = {
@@ -116,22 +155,25 @@
   function statsRow() {
     const s = Backend.getStats();
     return `<div class="stats">
-      <div class="stat">${ic('map-pin')}<b>${s.checkins}</b><span class="lbl">Check-ins</span></div>
-      <div class="stat">${ic('sparkles')}<b>${s.points}</b><span class="lbl">Pontos</span></div>
-      <div class="stat">${ic('trophy')}<b>${s.achievements}</b><span class="lbl">Conquistas</span></div>
+      <div class="stat">${ic('map-pin')}<b data-cuk="ck" data-cuv="${s.checkins}">${s.checkins}</b><span class="lbl">Check-ins</span></div>
+      <div class="stat">${ic('sparkles')}<b data-cuk="pts" data-cuv="${s.points}">${s.points}</b><span class="lbl">Pontos</span></div>
+      <div class="stat">${ic('trophy')}<b data-cuk="aw" data-cuv="${s.achievements}">${s.achievements}</b><span class="lbl">Conquistas</span></div>
     </div>`;
   }
 
   function xpCard() {
     const pts = Backend.getStats().points;
     const lvl = levelInfo(pts);
+    const label = lvl.max
+      ? `<span data-cuk="xp" data-cuv="${pts}">${pts}</span> XP`
+      : `<span data-cuk="xp" data-cuv="${lvl.cur}">${lvl.cur}</span> / ${lvl.need} XP`;
     return `<div class="xp-card">
-      <div class="row"><span>Experiência</span><b>${xpLabel(lvl, pts)}</b></div>
+      <div class="row"><span>Experiência</span><b>${label}</b></div>
       <div class="bar"><div style="width:${lvl.pct}%"></div></div>
     </div>`;
   }
 
-  function renderHome() {
+  function renderHome(entering) {
     const el = document.getElementById('screen-home');
     const st = el.scrollTop;
     const feed = Backend.getHomeFeed(Sim);
@@ -139,12 +181,13 @@
 
     const missions = feed.missions.map((m) => {
       const pct = m.progress.total ? Math.round((m.progress.completed / m.progress.total) * 100) : 0;
+      const glow = recentlyUpdated[m.id] && Date.now() - recentlyUpdated[m.id] < 9000 ? 'glow-new' : '';
       const body = m.user_status === 'upcoming'
         ? `<div class="nearest">${ic('lock')} Abre em ${fmtDate(m.starts_at)}<span class="dist">bônus +${m.bonus_points}</span></div>`
         : `<div class="bar slim"><div style="width:${pct}%"></div></div>
            <div class="nums"><span><b>${m.progress.completed}</b>/${m.progress.total} check-ins</span><span>bônus <b>+${m.bonus_points} pts</b></span></div>
            ${m.nearest_pending_place ? `<div class="nearest">${ic('map-pin')} ${esc(m.nearest_pending_place.name)}<span class="dist">${fmtDist(m.nearest_pending_place.distance_m)}</span></div>` : ''}`;
-      return `<div class="m-card" data-mission="${m.id}">
+      return `<div class="m-card ${glow}" data-mission="${m.id}">
         <div class="top"><div class="m-emoji">${m.badge}</div>
           <div><div class="ttl">${esc(m.name)}</div><div class="sub">${m.progress.total} locais</div></div>
           <span class="chipwrap">${chipFor(m.user_status)}</span>
@@ -161,10 +204,10 @@
           : `<div class="pts">+${p.base_points} pts</div>`}</div>
       </div>`).join('') || '<p class="muted">Nenhum local avulso por aqui.</p>';
 
-    el.innerHTML = `<div class="app-pad">
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
       <div class="app-head">
         <div class="greet">Olá, viajante 👋<small>Pronto para a próxima descoberta?</small></div>
-        <span class="level-pill">${esc(lvl.name)}</span>
+        <span class="level-pill">${lvl.emoji} ${esc(lvl.name)}</span>
       </div>
       ${xpCard()}
       ${statsRow()}
@@ -182,7 +225,7 @@
       c.addEventListener('click', () => openSheet(c.dataset.place)));
   }
 
-  function renderProfile() {
+  function renderProfile(entering) {
     const el = document.getElementById('screen-profile');
     const st = el.scrollTop;
     const prof = Backend.getProfile();
@@ -217,11 +260,11 @@
       </div>`;
     }).join('') || '<p class="muted">Sem movimentações ainda.</p>';
 
-    el.innerHTML = `<div class="app-pad">
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
       <div class="profile-hero">
         <div class="avatar">🧭</div>
         <div><div class="nm">Viajante</div>
-        <div class="rl">${esc(lvl.name)} · ${stats.points} pts</div></div>
+        <div class="rl">${lvl.emoji} ${esc(lvl.name)} · ${stats.points} pts</div></div>
       </div>
       ${xpCard()}
       ${statsRow()}
@@ -232,6 +275,135 @@
       ${rows}
     </div>`;
     el.scrollTop = st;
+  }
+
+  // ───────────── social: ranking entre amigos + pessoas ─────────────
+  let socialSeg = 'ranking';
+
+  const initialsOf = (name) => name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  const avatar = (p, size) =>
+    `<div class="avt ${size}" style="--h:${p.hue}">${p.you ? '🧭' : initialsOf(p.name)}</div>`;
+
+  function renderSocial(entering) {
+    const el = document.getElementById('screen-social');
+    const st = el.scrollTop;
+    const soc = Backend.getSocial();
+
+    // FLIP: memoriza onde cada linha estava para animar a reordenação
+    const oldTops = {};
+    if (!entering) {
+      el.querySelectorAll('[data-id]').forEach((r) => {
+        oldTops[r.dataset.id] = r.getBoundingClientRect().top;
+      });
+    }
+
+    let body = '';
+    if (socialSeg === 'ranking') {
+      const podium = [soc.ranking[1], soc.ranking[0], soc.ranking[2]]; // 2º · 1º · 3º
+      const cls = ['second', 'first', 'third'];
+      const pod = podium.map((r, i) => r ? `
+        <div class="pcol ${cls[i]}" data-id="${r.id}">
+          ${cls[i] === 'first' ? '<span class="crown">👑</span>' : ''}
+          ${avatar(r, cls[i] === 'first' ? 'lg' : 'md')}
+          <span class="pn">${r.you ? 'Você' : esc(r.name.split(' ')[0])}</span>
+          ${r.you ? '<span class="you-tag">VOCÊ</span>' : ''}
+          <span class="pp">${r.points} pts</span>
+          <div class="base">${r.rank}</div>
+        </div>` : '<div class="pcol"></div>').join('');
+      const rows = soc.ranking.slice(3).map((r) => `
+        <div class="rank-row ${r.you ? 'me' : ''}" data-id="${r.id}">
+          <span class="pos">${r.rank}</span>
+          ${avatar(r, 'sm')}
+          <div class="info"><div class="nm">${r.you ? 'Você' : esc(r.name)}</div>
+            <div class="lv">${levelInfo(r.points).emoji} ${esc(levelInfo(r.points).name)}</div></div>
+          <span class="pts">${r.points} pts</span>
+        </div>`).join('');
+      body = `
+        <div class="podium">${pod}</div>
+        ${rows}
+        <div class="gps-warn">💡 O ranking usa seus pontos reais, ao vivo — faça um check-in e veja você subir na hora.</div>`;
+    } else {
+      const reqs = soc.requests.map((p) => `
+        <div class="req-row" data-id="${p.id}">
+          ${avatar(p, 'sm')}
+          <div class="info"><div class="nm">${esc(p.name)}</div>
+            <div class="mt">${levelInfo(p.points).emoji} ${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
+          <button class="btn-round no" data-decline="${p.id}">${ic('x')}</button>
+          <button class="btn-round ok" data-accept="${p.id}">${ic('check')}</button>
+        </div>`).join('');
+      const friends = soc.friends.map((p) => `
+        <div class="friend-row" data-id="${p.id}">
+          ${avatar(p, 'sm')}
+          <div class="info"><div class="nm">${esc(p.name)}</div>
+            <div class="mt">${levelInfo(p.points).emoji} ${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
+          <button class="btn-round chat" data-chat="${p.id}">${ic('message-circle')}</button>
+        </div>`).join('') || '<p class="muted">Aceite pedidos ou adicione pessoas para montar sua tripulação.</p>';
+      const sugs = soc.suggestions.map((p) => `
+        <div class="friend-row" data-id="${p.id}">
+          ${avatar(p, 'sm')}
+          <div class="info"><div class="nm">${esc(p.name)}</div>
+            <div class="mt">${levelInfo(p.points).emoji} ${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
+          ${p.status === 'requested_out'
+            ? `<button class="btn-add sent" disabled>${ic('check')} Solicitado</button>`
+            : `<button class="btn-add" data-add="${p.id}">${ic('user-plus')} Adicionar</button>`}
+        </div>`).join('') || '<p class="muted">Sem sugestões no momento.</p>';
+
+      body = `
+        ${soc.requests.length ? `<div class="sec" style="margin-top:4px"><h3>Pedidos pendentes<span class="count-pill">${soc.requests.length}</span></h3><p>Pessoas que querem viajar com você</p></div>${reqs}` : ''}
+        <div class="sec"><h3>Amigos · ${soc.friends.length}</h3><p>Sua tripulação de exploração</p></div>
+        ${friends}
+        <div class="sec"><h3>Adicionar pessoas</h3><p>Sugestões com amigos em comum</p></div>
+        ${sugs}`;
+    }
+
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
+      <div class="app-head">
+        <div class="greet">Social<small>Compita e explore junto</small></div>
+        <span class="level-pill">#${soc.my_rank} no ranking</span>
+      </div>
+      <div class="seg">
+        <button class="${socialSeg === 'ranking' ? 'on' : ''}" data-seg="ranking">🏆 Ranking</button>
+        <button class="${socialSeg === 'friends' ? 'on' : ''}" data-seg="friends">Amigos${soc.requests.length ? `<span class="count-pill">${soc.requests.length}</span>` : ''}</button>
+      </div>
+      ${body}
+    </div>`;
+    el.scrollTop = st;
+
+    // FLIP: cada linha desliza da posição antiga para a nova
+    el.querySelectorAll('[data-id]').forEach((r) => {
+      const prev = oldTops[r.dataset.id];
+      if (prev == null) return;
+      const d = prev - r.getBoundingClientRect().top;
+      if (!d) return;
+      r.style.transition = 'none';
+      r.style.transform = `translateY(${d}px)`;
+      requestAnimationFrame(() => {
+        r.style.transition = 'transform .55s cubic-bezier(.2,.8,.2,1)';
+        r.style.transform = '';
+      });
+    });
+
+    el.querySelectorAll('[data-seg]').forEach((b) => b.onclick = () => {
+      socialSeg = b.dataset.seg;
+      animateNext = true;
+      render();
+    });
+    el.querySelectorAll('[data-accept]').forEach((b) => b.onclick = () => {
+      const p = Backend.acceptRequest(b.dataset.accept);
+      buzz(20);
+      toast(`🎉 ${esc(p.name)} agora faz parte da sua tripulação — entrou no ranking!`, 'ok');
+    });
+    el.querySelectorAll('[data-decline]').forEach((b) => b.onclick = () => {
+      Backend.declineRequest(b.dataset.decline);
+      toast('Pedido recusado', '');
+    });
+    el.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
+      const p = Backend.sendRequest(b.dataset.add);
+      buzz(15);
+      toast(`✈️ Pedido enviado para ${esc(p.name)}`, 'ok');
+    });
+    el.querySelectorAll('[data-chat]').forEach((b) => b.onclick = () =>
+      toast('💬 Chat entre amigos chega na v2', ''));
   }
 
   // ───────────── mapa ─────────────
@@ -245,7 +417,7 @@
 
     userMarker = L.marker([Sim.lat, Sim.lng], {
       draggable: true, zIndexOffset: 1000,
-      icon: L.divIcon({ className: '', html: '<div class="user-dot"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }),
+      icon: L.divIcon({ className: '', html: '<div class="user-wrap"><span class="ring"></span><div class="user-dot"></div></div>', iconSize: [22, 22], iconAnchor: [11, 11] }),
     }).addTo(map);
     userMarker.on('drag', (e) => {
       const ll = e.target.getLatLng();
@@ -259,15 +431,16 @@
   function refreshMarkers() {
     if (!map) return;
     markersLayer.clearLayers();
-    Backend.getMapPins().forEach((pin) => {
+    Backend.getMapPins().forEach((pin, i) => {
       const cls = pin.user_status === 'completed' ? 'done'
         : pin.user_status === 'locked' ? 'locked' : pin.kind;
       const mini = pin.user_status === 'completed' ? '<span class="mini">✓</span>'
         : pin.user_status === 'locked' ? '<span class="mini">🔒</span>'
         : pin.kind === 'mission' ? '<span class="mini">★</span>' : '';
+      const drop = animatePins ? `drop" style="animation-delay:${i * 45}ms` : '';
       const icon = L.divIcon({
         className: '',
-        html: `<div class="pin2 ${cls}"><div class="c">${pin.emoji}</div><div class="tip"></div>${mini}</div>`,
+        html: `<div class="pin2 ${cls} ${drop}"><div class="c">${pin.emoji}</div><div class="tip"></div>${mini}</div>`,
         iconSize: [44, 52], iconAnchor: [22, 50],
       });
       L.marker([pin.lat, pin.lng], { icon })
@@ -426,6 +599,11 @@
   // ───────────── check-in ─────────────
   async function doCheckin(placeId) {
     if (validating) return;
+    // memória entre telas: nível e posição no ranking ANTES do check-in
+    const btn = document.querySelector('#sheet [data-checkin], #sheet [data-force]');
+    const btnRect = btn ? btn.getBoundingClientRect() : null;
+    const prevLvlName = levelInfo(Backend.getStats().points).name;
+    const prevRank = Backend.getSocial().my_rank;
     validating = placeId;
     renderSheet();
     try {
@@ -433,15 +611,28 @@
         lat: Sim.lat, lng: Sim.lng, accuracy_m: Sim.accuracy, is_mock_location: Sim.mock,
       });
       validating = null;
+      buzz(res.checkin.status === 'flagged' ? [20, 40, 20] : 35);
+      flyPoints(btnRect, '+' + res.checkin.points_awarded);
       if (res.checkin.status === 'flagged') {
         toast(`+${res.checkin.points_awarded} pts — ⚠️ check-in sinalizado para revisão (veja Admin → Revisão)`, 'warn');
       } else {
         toast(`✅ Check-in confirmado! +${res.checkin.points_awarded} pts (a ${res.validation.distance_m} m do centro)`, 'ok');
       }
       res.achievements_progress.forEach((ap) => {
+        recentlyUpdated[ap.achievement_id] = Date.now(); // a Home vai brilhar neste card
         if (ap.newly_unlocked) queueCelebration(ap);
         else if (ap.total) toast(`${ap.badge} ${esc(ap.name)}: ${ap.completed}/${ap.total}`, '');
       });
+      // telas conversando: subiu de nível? ultrapassou alguém no ranking?
+      const lvlNow = levelInfo(Backend.getStats().points);
+      if (lvlNow.name !== prevLvlName) {
+        queueCelebration({ kind: 'level', name: lvlNow.name, badge: lvlNow.emoji });
+      }
+      const socNow = Backend.getSocial();
+      if (socNow.my_rank < prevRank) {
+        const passed = socNow.ranking.find((r) => r.rank === socNow.my_rank + 1);
+        toast(`🔥 Você subiu para #${socNow.my_rank} no ranking${passed ? ' — ultrapassou ' + esc(passed.name) + '!' : '!'}`, 'ok');
+      }
     } catch (e) {
       validating = null;
       if (e && e.code === 'ALREADY_CHECKED_IN') {
@@ -471,25 +662,39 @@
       const left = Math.random() * 100, dur = 2 + Math.random() * 2, delay = Math.random();
       return `<span class="confetti" style="left:${left}%;animation-duration:${dur}s;animation-delay:${delay}s">${e}</span>`;
     }).join('');
-    el.innerHTML = `${confetti}
+    const isLevel = ap.kind === 'level';
+    el.innerHTML = `<div class="rays"></div>${confetti}
       <div class="badge">${ap.badge || '🏆'}</div>
-      <h2>Conquista desbloqueada!</h2>
-      <div class="mn">${esc(ap.name)}</div>
-      <div class="bonus">+${ap.bonus_points} pts de bônus</div>
-      <button>Continuar explorando</button>`;
+      <h2>${isLevel ? 'Você subiu de nível!' : 'Conquista desbloqueada!'}</h2>
+      <div class="mn">${isLevel ? 'Novo título de viajante' : esc(ap.name)}</div>
+      <div class="bonus">${isLevel ? esc(ap.name) : '+' + ap.bonus_points + ' pts de bônus'}</div>
+      <button>${isLevel ? 'Continuar a jornada' : 'Continuar explorando'}</button>`;
     el.classList.remove('hidden');
+    buzz([30, 60, 90]);
     el.querySelector('button').onclick = showNextCelebration;
   }
 
   // ───────────── tabs do telefone ─────────────
+  const TAB_ORDER = ['home', 'map', 'social', 'profile'];
   function switchTab(tab) {
+    const dir = TAB_ORDER.indexOf(tab) >= TAB_ORDER.indexOf(activeTab) ? 'r' : 'l';
     activeTab = tab;
+    buzz(8);
     document.querySelectorAll('.tabbar button').forEach((b) =>
       b.classList.toggle('active', b.dataset.tab === tab));
-    document.getElementById('screen-home').classList.toggle('hidden', tab !== 'home');
-    document.getElementById('screen-map').classList.toggle('hidden', tab !== 'map');
-    document.getElementById('screen-profile').classList.toggle('hidden', tab !== 'profile');
+    TAB_ORDER.forEach((t) => {
+      const s = document.getElementById('screen-' + t);
+      if (s) s.classList.toggle('hidden', t !== tab);
+    });
+    const scr = document.getElementById('screen-' + tab);
+    if (scr) {
+      scr.classList.remove('screen-enter-r', 'screen-enter-l');
+      void scr.offsetWidth; // re-dispara a animação de entrada
+      scr.classList.add('screen-enter-' + dir);
+    }
+    animateNext = true;
     if (tab === 'map') {
+      animatePins = true;
       initMap();
       setTimeout(() => { map.invalidateSize(); }, 60);
     }
@@ -582,11 +787,16 @@
   // ───────────── render raiz ─────────────
   function render() {
     updateSimReadout();
-    if (activeTab === 'home') renderHome();
-    else if (activeTab === 'profile') renderProfile();
+    const entering = animateNext;
+    animateNext = false;
+    if (activeTab === 'home') renderHome(entering);
+    else if (activeTab === 'profile') renderProfile(entering);
+    else if (activeTab === 'social') renderSocial(entering);
     refreshMarkers();
     renderSheet();
     UI.refreshIcons();
+    runCounters(entering);
+    animatePins = false;
   }
 
   function init() {

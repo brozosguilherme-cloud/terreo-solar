@@ -27,6 +27,7 @@
     } else {
       db = mem || SEED();
     }
+    if (!db.people) db.people = SEED().people; // migração: bases salvas antes do social
     persist();
   }
   function persist() {
@@ -543,6 +544,55 @@
     return anchor.name;
   }
 
+  // ═════════════════ API — Social ═════════════════
+
+  /* Ranking entre amigos: amigos aceitos + você (pontos reais do ledger).
+   * Aceitar um pedido coloca a pessoa no ranking na hora. */
+  function getSocial() {
+    const ppl = db.people || [];
+    const me = { id: 'me', name: 'Você', hue: 38, points: totalPoints(), you: true };
+    const ranking = [
+      ...ppl.filter((p) => p.status === 'friend')
+        .map((p) => ({ id: p.id, name: p.name, hue: p.hue, points: p.points })),
+      me,
+    ].sort((a, b) => b.points - a.points)
+      .map((p, i) => ({ ...p, rank: i + 1 }));
+    return {
+      requests: ppl.filter((p) => p.status === 'request_in'),
+      friends: ppl.filter((p) => p.status === 'friend')
+        .sort((a, b) => b.points - a.points),
+      suggestions: ppl.filter((p) => p.status === 'suggested' || p.status === 'requested_out'),
+      ranking,
+      my_rank: ranking.find((r) => r.you).rank,
+    };
+  }
+
+  function personById(id) { return (db.people || []).find((p) => p.id === id); }
+
+  function acceptRequest(id) {
+    const p = personById(id);
+    if (!p || p.status !== 'request_in') throw err('NOT_FOUND', 'Pedido não encontrado.');
+    p.status = 'friend';
+    save();
+    return p;
+  }
+
+  function declineRequest(id) {
+    const p = personById(id);
+    if (!p || p.status !== 'request_in') throw err('NOT_FOUND', 'Pedido não encontrado.');
+    p.status = 'none';
+    save();
+    return p;
+  }
+
+  function sendRequest(id) {
+    const p = personById(id);
+    if (!p || p.status !== 'suggested') throw err('NOT_FOUND', 'Sugestão não encontrada.');
+    p.status = 'requested_out';
+    save();
+    return p;
+  }
+
   // ───────────── exports ─────────────
   globalThis.Backend = {
     init: load,
@@ -554,6 +604,8 @@
     // app
     getHomeFeed, getMapPins, getPlaceDetail, getAchievementDetail,
     performCheckin, getLedger, getProfile, getStats,
+    // social
+    getSocial, acceptRequest, declineRequest, sendRequest,
     // admin
     adminListPlaces, adminOverlaps, adminSavePlace, adminPublishPlace, adminArchivePlace,
     adminListAchievements, adminSaveAchievement, adminPublishAchievement,

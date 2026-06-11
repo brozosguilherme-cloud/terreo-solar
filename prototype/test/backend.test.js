@@ -148,6 +148,26 @@ const at = (placeId, over) => {
   const rReloc = await B.performCheckin('p6', { lat: p6r.lat + 0.0001, lng: p6r.lng + 0.0001, accuracy_m: 15 });
   ok(rReloc.checkin.status === 'confirmed', 'check-in funciona nas novas coordenadas');
 
+  console.log('\n— Social: amigos e ranking —');
+  const soc = B.getSocial();
+  ok(soc.ranking.some((r) => r.you), 'ranking inclui você');
+  ok(soc.ranking.every((r, i, a) => i === 0 || a[i - 1].points >= r.points), 'ranking ordenado por pontos desc');
+  ok(soc.ranking.find((r) => r.you).points === B.getProfile().total_points,
+    'seus pontos no ranking vêm do ledger (ao vivo)');
+  const rankBefore = B.getSocial().my_rank;
+  const reqIn = soc.requests[0];
+  B.acceptRequest(reqIn.id);
+  ok(B.getSocial().friends.some((f) => f.id === reqIn.id), 'aceitar pedido transforma em amigo');
+  ok(B.getSocial().ranking.some((r) => r.id === reqIn.id), 'amigo aceito entra no ranking');
+  const reqIn2 = B.getSocial().requests[0];
+  B.declineRequest(reqIn2.id);
+  ok(!B.getSocial().requests.some((r) => r.id === reqIn2.id), 'recusar remove o pedido');
+  const sug = B.getSocial().suggestions.find((s) => s.status === 'suggested');
+  B.sendRequest(sug.id);
+  ok(B.getSocial().suggestions.find((s) => s.id === sug.id).status === 'requested_out',
+    'adicionar pessoa marca pedido como enviado');
+  ok(typeof rankBefore === 'number' && B.getSocial().my_rank >= 1, 'minha posição é calculada');
+
   console.log(`\n${'─'.repeat(40)}\n${passed} passaram · ${failed} falharam\n`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error('Erro fatal no teste:', e); process.exit(1); });
