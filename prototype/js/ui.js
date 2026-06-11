@@ -80,5 +80,10 @@
       d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  globalThis.UI = { toast, openModal, confirmModal, alertModal, esc, fmtDate, fmtDateTime };
+  /* re-renderiza os ícones de linha (lucide) após trocas de innerHTML */
+  function refreshIcons() {
+    try { if (globalThis.lucide) globalThis.lucide.createIcons(); } catch (e) { /* offline: segue sem ícones */ }
+  }
+
+  globalThis.UI = { toast, openModal, confirmModal, alertModal, esc, fmtDate, fmtDateTime, refreshIcons };
 })();
