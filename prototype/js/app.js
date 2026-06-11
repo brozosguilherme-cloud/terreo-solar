@@ -207,14 +207,13 @@
   function placeCardsHtml(places) {
     return places.map((p) => `
       <div class="pl-card" data-place="${p.id}">
-        <div class="pl-photo">
-          <span class="pl-fb">${p.emoji}</span>
-          <img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()">
+        <div class="pl-photo g-${p.category}">
+          <span class="tile-emoji">${p.emoji}</span>
           <span class="pl-chip cat">${esc(p.category)}</span>
           <span class="pl-chip dist">${ic('map-pin')} ${fmtDist(p.distance_m)}</span>
         </div>
         <div class="pl-body">
-          <div class="pl-name">${p.emoji} ${esc(p.name)}</div>
+          <div class="pl-name">${esc(p.name)}</div>
           ${p.user_status === 'completed'
             ? '<span class="pl-pts done">Visitado ✓</span>'
             : `<span class="pl-pts">+${p.base_points} Pts</span>`}
@@ -367,7 +366,7 @@
           <span class="pos">${r.rank}</span>
           ${avatar(r, 'sm')}
           <div class="info"><div class="nm">${r.you ? 'Você' : esc(r.name)}</div>
-            <div class="lv">${levelInfo(r.points).emoji} ${esc(levelInfo(r.points).name)}</div></div>
+            <div class="lv">${esc(levelInfo(r.points).name)}</div></div>
           <span class="pts">${r.points} pts</span>
         </div>`).join('');
       body = `
@@ -379,7 +378,7 @@
         <div class="req-row" data-id="${p.id}">
           ${avatar(p, 'sm')}
           <div class="info"><div class="nm">${esc(p.name)}</div>
-            <div class="mt">${levelInfo(p.points).emoji} ${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
+            <div class="mt">${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
           <button class="btn-round no" data-decline="${p.id}">${ic('x')}</button>
           <button class="btn-round ok" data-accept="${p.id}">${ic('check')}</button>
         </div>`).join('');
@@ -387,14 +386,14 @@
         <div class="friend-row" data-id="${p.id}">
           ${avatar(p, 'sm')}
           <div class="info"><div class="nm">${esc(p.name)}</div>
-            <div class="mt">${levelInfo(p.points).emoji} ${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
+            <div class="mt">${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
           <button class="btn-round chat" data-chat="${p.id}">${ic('message-circle')}</button>
         </div>`).join('') || '<p class="muted">Aceite pedidos ou adicione pessoas para montar sua tripulação.</p>';
       const sugs = soc.suggestions.map((p) => `
         <div class="friend-row" data-id="${p.id}">
           ${avatar(p, 'sm')}
           <div class="info"><div class="nm">${esc(p.name)}</div>
-            <div class="mt">${levelInfo(p.points).emoji} ${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
+            <div class="mt">${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
           ${p.status === 'requested_out'
             ? `<button class="btn-add sent" disabled>${ic('check')} Solicitado</button>`
             : `<button class="btn-add" data-add="${p.id}">${ic('user-plus')} Adicionar</button>`}
@@ -472,7 +471,10 @@
           <div class="pm">${esc(levelInfo(p.points).name)} · ${timeAgo(p.ts)}</div></div>
         </div>
         <p class="ptext">${esc(p.text)}</p>
-        ${p.photo_url ? `<img class="pimg" src="${p.photo_url}" loading="lazy" alt="" onerror="this.remove()">` : ''}
+        ${p.attachment ? `<div class="postcard g-${p.attachment.category}">
+          <span class="tile-emoji pc">${p.attachment.emoji}</span>
+          <span class="pc-label">${esc(p.attachment.label)}</span>
+        </div>` : ''}
         <div class="pact">
           <button class="plike ${p.liked ? 'on' : ''}" data-like="${p.id}">${ic('heart')} ${p.likes}</button>
           <button class="pcmt" data-cmt>${ic('message-circle')} ${p.comments}</button>
@@ -521,16 +523,20 @@
     markersLayer.clearLayers();
     let pins = Backend.getMapPins();
     if (mapFilter === 'missions') pins = pins.filter((p) => p.kind === 'mission');
+    const RING = { historico: '#E1953B', cultura: '#9D5CE6', gastronomia: '#EB5F33', natureza: '#4FA055', evento: '#4E7FE0' };
     pins.forEach((pin, i) => {
       const cls = pin.user_status === 'completed' ? 'done'
         : pin.user_status === 'locked' ? 'locked' : pin.kind;
       const mini = pin.user_status === 'completed' ? '<span class="mini">✓</span>'
         : pin.user_status === 'locked' ? '<span class="mini">🔒</span>'
         : pin.kind === 'mission' ? '<span class="mini">★</span>' : '';
+      // cor do anel = categoria (estados done/locked sobrescrevem via classe)
+      const ring = pin.user_status === 'completed' || pin.user_status === 'locked'
+        ? '' : (RING[pin.category] || '#F28220');
       const drop = animatePins ? `drop" style="animation-delay:${i * 45}ms` : '';
       const icon = L.divIcon({
         className: '',
-        html: `<div class="pin2 ${cls} ${drop}"><div class="c">${pin.emoji}</div><div class="tip"></div>${mini}</div>`,
+        html: `<div class="pin2 ${cls} ${drop}"><div class="c"${ring ? ` style="border-color:${ring}"` : ''}>${pin.emoji}</div><div class="tip"${ring ? ` style="background:${ring}"` : ''}></div>${mini}</div>`,
         iconSize: [44, 52], iconAnchor: [22, 50],
       });
       L.marker([pin.lat, pin.lng], { icon })
@@ -573,7 +579,7 @@
     cardsEl.innerHTML = list.slice(0, 8).map((p) => {
       const d = Backend.haversine(Sim.lat, Sim.lng, p.lat, p.lng);
       return `<div class="mp-card" data-place="${p.id}">
-        <div class="mp-thumb"><span>${p.emoji}</span><img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()"></div>
+        <div class="mp-thumb g-${p.category}"><span>${p.emoji}</span></div>
         <div class="mp-info"><b>${esc(p.name)}</b>
         <span>${esc(p.category)} · ${fmtDist(d)}${p.user_status === 'completed' ? ' · ✓ visitado' : ''}</span></div>
         <span class="mp-go">${ic('chevron-right')}</span>
@@ -661,9 +667,8 @@
     }
 
     el.innerHTML = `
-      <div class="hero">
-        <span class="hero-fb">${d.emoji}</span>
-        <img src="${d.photo_url || ''}" alt="" onerror="this.remove()">
+      <div class="hero g-${d.category}">
+        <span class="tile-emoji">${d.emoji}</span>
         <div class="hero-shade"></div>
         <button class="hbtn l" data-close>${ic('arrow-left')}</button>
         <button class="hbtn r" data-fav>${ic('bookmark')}</button>
@@ -672,7 +677,7 @@
           <div class="ht">${esc(d.name)}</div>
           <div class="hrow">
             <span class="haddr">${ic('map-pin')} ${esc(d.address)}</span>
-            <span class="hpts">+${d.base_points} pts</span>
+            <span class="hpts">+${d.base_points} Pts</span>
           </div>
         </div>
       </div>
@@ -713,17 +718,16 @@
       const over = p.user_status === 'completed' ? '<span class="tover ok">✓</span>'
         : p.user_status === 'locked' ? '<span class="tover lk">🔒</span>' : '';
       return `<div class="mission-place-row" data-place="${p.id}">
-        <div class="p-thumb mini"><span class="pe">${p.emoji}</span><img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()">${over}</div>
+        <div class="p-thumb mini g-${p.category || 'historico'}"><span class="pe">${p.emoji}</span>${over}</div>
         <span class="nm">${esc(p.name)}</span>
-        <span class="ds">${p.user_status === 'completed' ? '+' + p.base_points + ' pts' : fmtDist(p.distance_m)}</span>
+        <span class="ds">${p.user_status === 'completed' ? '+' + p.base_points + ' Pts' : fmtDist(p.distance_m)}</span>
         <span class="chev">›</span>
       </div>`;
     }).join('');
 
     el.innerHTML = `
-      <div class="hero">
-        <span class="hero-fb">${d.badge}</span>
-        <img src="${d.cover_image_url || ''}" alt="" onerror="this.remove()">
+      <div class="hero g-conquista">
+        <span class="tile-emoji">${d.badge}</span>
         <div class="hero-shade"></div>
         <button class="hbtn l" data-close>${ic('arrow-left')}</button>
         <div class="hero-info">
