@@ -1045,6 +1045,80 @@ table.admin .actions button { font-size: 12px; padding: 6px 12px; }
 .checklist li.ok::before { content: "✅ "; }
 .checklist li.bad::before { content: "❌ "; }
 
+/* ════════════════════════════════════════════════════════════
+   v4.1 POLISH — sistema de cor por categoria, respiro e definição
+   (sem fotos remotas: tiles em gradiente sempre renderizam)
+   ════════════════════════════════════════════════════════════ */
+
+/* tiles de categoria */
+.g-historico { background: linear-gradient(135deg, #FFE3B3, #F0A050); }
+.g-cultura { background: linear-gradient(135deg, #EBD4FF, #A873EA); }
+.g-gastronomia { background: linear-gradient(135deg, #FFD4BC, #EF7048); }
+.g-natureza { background: linear-gradient(135deg, #D9F0BC, #6BB55F); }
+.g-evento { background: linear-gradient(135deg, #C9E1FF, #5F8EE8); }
+.g-conquista { background: var(--grad-orange); }
+
+.tile-emoji {
+  position: absolute; right: 4%; bottom: -10%; font-size: 86px; z-index: 1;
+  transform: rotate(-8deg); pointer-events: none;
+  filter: drop-shadow(0 12px 18px rgba(33, 31, 28, .22));
+}
+.tile-emoji.pc { font-size: 78px; bottom: -14%; }
+.hero .tile-emoji {
+  font-size: 170px; right: -3%; bottom: -12%;
+  animation: tileFloat 5s ease-in-out infinite;
+}
+@keyframes tileFloat { 50% { transform: rotate(-8deg) translateY(-10px); } }
+
+/* respiro: grade de 8pt */
+body { background: #E9E7E1; }
+.app-pad { padding: 26px 20px 118px; }
+.home-top { margin-bottom: 22px; }
+.level-card { margin-bottom: 20px; }
+.chips { padding-bottom: 8px; margin-bottom: 2px; }
+.sec { margin: 30px 0 14px; }
+.mcarousel { padding-bottom: 18px; }
+.seg { margin-bottom: 20px; }
+.post { margin-bottom: 16px; padding: 18px; }
+.pl-card { margin-bottom: 16px; }
+.rank-row, .req-row, .friend-row, .ledger-row { margin-bottom: 10px; }
+.page-body { padding: 20px 22px 34px; }
+
+/* definição dos cards contra o fundo */
+.level-card, .cq-card, .pl-card, .post, .podium, .rank-row, .req-row,
+.friend-row, .ledger-row, .stat, .xp-card, .p-row, .badge-card, .mp-card {
+  border: 1px solid rgba(33, 31, 28, .055);
+}
+
+/* card de lugar: tile no lugar de foto remota */
+.pl-photo { height: 128px; overflow: hidden; }
+.pl-photo .pl-fb, .pl-photo img { display: none; }
+.pl-body { padding: 13px 16px 15px; }
+
+/* postal do feed (substitui foto aleatória) */
+.postcard {
+  position: relative; height: 132px; border-radius: 18px; overflow: hidden;
+  margin-bottom: 12px;
+}
+.postcard .pc-label {
+  position: absolute; left: 12px; bottom: 12px; z-index: 2;
+  background: rgba(255,255,255,.94); border-radius: 99px; padding: 7px 13px;
+  font-weight: 900; font-size: 12px; color: var(--ink);
+}
+
+/* thumbs viram tiles (roteiro da missão e carrossel do mapa) */
+.p-thumb, .mp-thumb { background: var(--bg-soft); }
+.p-thumb img, .mp-thumb img { display: none; }
+.p-thumb .pe, .mp-thumb > span { position: relative; z-index: 2; }
+
+/* coerência de acentos */
+.btn-round.chat { background: var(--orange-soft); color: var(--orange-deep); }
+.mp-info span, .p-row .mt { text-transform: capitalize; }
+.pin2 .c { transition: border-color .2s; }
+
+/* menos ruído: nada de emoji duplicado em texto corrido */
+.rank-row .lv, .req-row .mt, .friend-row .mt { text-transform: capitalize; }
+
 /* acessibilidade */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

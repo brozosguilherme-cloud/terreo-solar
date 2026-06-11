@@ -215,7 +215,7 @@
       unlocked: pr.unlocked, unlockedAt: pr.unlockedAt,
       places: pr.members.map((p) => ({
         id: p.id, name: p.name, emoji: p.emoji, base_points: p.base_points,
-        photo_url: p.photo_url,
+        photo_url: p.photo_url, category: p.category,
         user_status: checkedIn(p.id) ? 'completed' : (placeUserStatus(p) || 'available'),
         distance_m: pos ? haversine(pos.lat, pos.lng, p.lat, p.lng) : null,
       })),
@@ -609,7 +609,8 @@
       const per = personById(p.person_id) || { name: '?', hue: 200, points: 0 };
       out.push({
         id: 'post:' + p.id, you: false, name: per.name, hue: per.hue, points: per.points,
-        text: p.text, photo_url: p.photo_url || null,
+        text: p.text,
+        attachment: p.emoji ? { emoji: p.emoji, category: p.category, label: p.label } : null,
         likes: p.likes + (p.liked ? 1 : 0), liked: !!p.liked,
         comments: p.comments || 0, ts: p.ts,
       });
@@ -621,7 +622,7 @@
       out.push({
         id: 'ck:' + c.id, you: true, name: 'Você', hue: 28, points: totalPoints(),
         text: `Check-in em ${pl.name}! +${c.points_awarded} PinPoints 📍`,
-        photo_url: pl.photo_url || null,
+        attachment: { emoji: pl.emoji, category: pl.category, label: pl.name },
         likes: ev.liked ? 1 : 0, liked: !!ev.liked, comments: 0, ts: Date.parse(c.created_at),
       });
     });
@@ -632,7 +633,7 @@
       out.push({
         id: 'ua:' + u.id, you: true, name: 'Você', hue: 28, points: totalPoints(),
         text: `Conquista desbloqueada: ${a.badge} ${a.name}! +${u.bonus_points_awarded} Pts Extra 🏆`,
-        photo_url: a.cover_image_url || null,
+        attachment: { emoji: a.badge, category: 'conquista', label: a.name },
         likes: ev.liked ? 1 : 0, liked: !!ev.liked, comments: 0, ts: Date.parse(u.completed_at),
       });
     });
