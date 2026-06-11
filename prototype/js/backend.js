@@ -323,6 +323,13 @@
   }
 
   function getLedger() { return [...db.ledger].reverse(); }
+  function getStats() {
+    return {
+      checkins: db.checkins.filter((c) => c.status !== 'revoked').length,
+      points: totalPoints(),
+      achievements: db.user_achievements.length,
+    };
+  }
   function getProfile() {
     return {
       total_points: totalPoints(),
@@ -546,7 +553,7 @@
     haversine, fmtDist,
     // app
     getHomeFeed, getMapPins, getPlaceDetail, getAchievementDetail,
-    performCheckin, getLedger, getProfile,
+    performCheckin, getLedger, getProfile, getStats,
     // admin
     adminListPlaces, adminOverlaps, adminSavePlace, adminPublishPlace, adminArchivePlace,
     adminListAchievements, adminSaveAchievement, adminPublishAchievement,

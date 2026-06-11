@@ -10,6 +10,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>TravelQuest — Protótipo local (dados mockados)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -38,9 +41,9 @@
         <div id="toasts"></div>
 
         <nav class="tabbar">
-          <button data-tab="home" class="active">🏠<span>Início</span></button>
-          <button data-tab="map">🗺️<span>Mapa</span></button>
-          <button data-tab="profile">👤<span>Perfil</span></button>
+          <button data-tab="home" class="active"><i data-lucide="home"></i><span>Início</span></button>
+          <button data-tab="map"><i data-lucide="map"></i><span>Mapa</span></button>
+          <button data-tab="profile"><i data-lucide="circle-user-round"></i><span>Perfil</span></button>
         </nav>
       </div>
     </div>
@@ -117,6 +120,7 @@
 <div id="modal-root"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
 <script src="js/mock-data.js"></script>
 <script src="js/backend.js"></script>
 <script src="js/ui.js"></script>
