@@ -136,6 +136,20 @@
         { id: 's2', name: 'Carla Mendes', hue: 45, points: 1620, mutual: 7, status: 'suggested' },
         { id: 's3', name: 'Tiago Nunes', hue: 110, points: 60, mutual: 1, status: 'suggested' },
       ],
+
+      // ─── Feed social (posts de amigos; seus check-ins entram ao vivo) ───
+      posts: [
+        { id: 'po1', person_id: 'f3', likes: 125, comments: 1, liked: false,
+          text: 'Fechei a Missão Centro Histórico! 5/5 locais e badge novo na coleção 🏛️✨ Bora pra próxima!',
+          photo_url: 'https://picsum.photos/seed/tq-m1/800/500', ts: Date.now() - 2 * 36e5 },
+        { id: 'po2', person_id: 'f1', likes: 47, comments: 0, liked: false,
+          text: 'Pôr do sol no Mirante 9 de Julho pra fechar o dia. Mais +50 PinPoints na conta 🌇',
+          photo_url: 'https://picsum.photos/seed/tq-p11/800/500', ts: Date.now() - 7 * 36e5 },
+        { id: 'po3', person_id: 'f2', likes: 18, comments: 2, liked: false,
+          text: 'Sanduíche de mortadela no Mercadão = o check-in mais gostoso da vida 🥪',
+          photo_url: 'https://picsum.photos/seed/tq-p9/800/500', ts: Date.now() - 26 * 36e5 },
+      ],
+      event_likes: {},
     };
   };
 })();

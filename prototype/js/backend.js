@@ -28,6 +28,8 @@
       db = mem || SEED();
     }
     if (!db.people) db.people = SEED().people; // migração: bases salvas antes do social
+    if (!db.posts) db.posts = SEED().posts;    // migração: bases antes do feed
+    if (!db.event_likes) db.event_likes = {};
     persist();
   }
   function persist() {
@@ -128,7 +130,7 @@
           : pr.completed > 0 ? 'in_progress' : 'not_started';
         return {
           id: a.id, name: a.name, badge: a.badge, bonus_points: a.bonus_points,
-          cover_image_url: a.cover_image_url,
+          cover_image_url: a.cover_image_url, description: a.description,
           starts_at: a.starts_at, ends_at: a.ends_at, window: w,
           progress: { completed: pr.completed, total: pr.needed },
           user_status, nearest_pending_place: nearest,
@@ -170,6 +172,7 @@
         const activeMs = membershipsOf(p.id).filter((a) => a.status === 'active' && windowState(a) !== 'expired');
         return {
           id: p.id, lat: p.lat, lng: p.lng, emoji: p.emoji,
+          name: p.name, category: p.category, photo_url: p.photo_url,
           kind: activeMs.length ? 'mission' : 'standalone',
           mission_ids: activeMs.map((a) => a.id),
           base_points: p.base_points, radius_m: p.radius_m, user_status: st,
@@ -597,6 +600,56 @@
     return p;
   }
 
+  // ═════════════════ API — Feed Social ═════════════════
+
+  /* Feed = posts dos amigos + SEUS check-ins e conquistas, ao vivo. */
+  function getFeed() {
+    const out = [];
+    (db.posts || []).forEach((p) => {
+      const per = personById(p.person_id) || { name: '?', hue: 200, points: 0 };
+      out.push({
+        id: 'post:' + p.id, you: false, name: per.name, hue: per.hue, points: per.points,
+        text: p.text, photo_url: p.photo_url || null,
+        likes: p.likes + (p.liked ? 1 : 0), liked: !!p.liked,
+        comments: p.comments || 0, ts: p.ts,
+      });
+    });
+    db.checkins.filter((c) => c.status !== 'revoked').forEach((c) => {
+      const pl = placeById(c.place_id);
+      if (!pl) return;
+      const ev = db.event_likes['ck:' + c.id] || {};
+      out.push({
+        id: 'ck:' + c.id, you: true, name: 'Você', hue: 28, points: totalPoints(),
+        text: `Check-in em ${pl.name}! +${c.points_awarded} PinPoints 📍`,
+        photo_url: pl.photo_url || null,
+        likes: ev.liked ? 1 : 0, liked: !!ev.liked, comments: 0, ts: Date.parse(c.created_at),
+      });
+    });
+    db.user_achievements.forEach((u) => {
+      const a = achById(u.achievement_id);
+      if (!a) return;
+      const ev = db.event_likes['ua:' + u.id] || {};
+      out.push({
+        id: 'ua:' + u.id, you: true, name: 'Você', hue: 28, points: totalPoints(),
+        text: `Conquista desbloqueada: ${a.badge} ${a.name}! +${u.bonus_points_awarded} Pts Extra 🏆`,
+        photo_url: a.cover_image_url || null,
+        likes: ev.liked ? 1 : 0, liked: !!ev.liked, comments: 0, ts: Date.parse(u.completed_at),
+      });
+    });
+    return out.sort((x, y) => y.ts - x.ts);
+  }
+
+  function toggleLike(id) {
+    if (id.indexOf('post:') === 0) {
+      const p = (db.posts || []).find((x) => 'post:' + x.id === id);
+      if (p) p.liked = !p.liked;
+    } else {
+      const ev = db.event_likes[id] || (db.event_likes[id] = { liked: false });
+      ev.liked = !ev.liked;
+    }
+    save();
+  }
+
   // ───────────── exports ─────────────
   globalThis.Backend = {
     init: load,
@@ -610,6 +663,7 @@
     performCheckin, getLedger, getProfile, getStats,
     // social
     getSocial, acceptRequest, declineRequest, sendRequest,
+    getFeed, toggleLike,
     // admin
     adminListPlaces, adminOverlaps, adminSavePlace, adminPublishPlace, adminArchivePlace,
     adminListAchievements, adminSaveAchievement, adminPublishAchievement,

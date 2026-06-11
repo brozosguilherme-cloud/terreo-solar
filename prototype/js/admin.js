@@ -116,7 +116,8 @@
     setTimeout(() => {
       const center = state.lat != null ? [state.lat, state.lng] : [-23.5495, -46.6355];
       mmap = L.map(m.body.querySelector('#pf-map')).setView(center, state.lat != null ? 16 : 14);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OSM' }).addTo(mmap);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        { maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OSM &copy; CARTO' }).addTo(mmap);
       const setPoint = (lat, lng) => {
         state.lat = lat; state.lng = lng;
         if (!marker) {

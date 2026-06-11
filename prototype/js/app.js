@@ -5,24 +5,33 @@
   const fmtDist = (m) => Backend.fmtDist(m);
   const ic = (name) => `<span class="ic"><i data-lucide="${name}"></i></span>`;
 
-  // níveis de experiência (apresentação — XP = pontos do ledger)
+  // níveis de experiência (PinPoints = pontos do ledger)
   const LEVELS = [
-    { name: 'Iniciante', at: 0, emoji: '🐣' },
-    { name: 'Aventureiro', at: 150, emoji: '🥾' },
-    { name: 'Explorador', at: 400, emoji: '🧭' },
-    { name: 'Guia Local', at: 800, emoji: '🗺️' },
-    { name: 'Lenda', at: 1500, emoji: '👑' },
+    { name: 'Turista Curioso', at: 0, emoji: '🐣' },
+    { name: 'Trilheiro Urbano', at: 150, emoji: '🥾' },
+    { name: 'Nômade do Mapa', at: 400, emoji: '🧭' },
+    { name: 'Cartógrafo Mestre', at: 800, emoji: '🗺️' },
+    { name: 'Lenda Viva', at: 1500, emoji: '👑' },
   ];
   function levelInfo(points) {
     let i = 0;
     while (i + 1 < LEVELS.length && points >= LEVELS[i + 1].at) i++;
     const cur = LEVELS[i], next = LEVELS[i + 1];
-    if (!next) return { name: cur.name, emoji: cur.emoji, cur: points, need: points, pct: 100, max: true };
+    if (!next) return { name: cur.name, emoji: cur.emoji, cur: points, need: points, nextAt: points, pct: 100, max: true };
     return {
-      name: cur.name, emoji: cur.emoji, max: false,
+      name: cur.name, emoji: cur.emoji, max: false, nextAt: next.at,
       cur: points - cur.at, need: next.at - cur.at,
       pct: Math.min(100, Math.round(((points - cur.at) / (next.at - cur.at)) * 100)),
     };
+  }
+
+  function timeAgo(ts) {
+    const diff = Backend.now() - ts;
+    if (diff < 90e3) return 'agora';
+    if (diff < 36e5) return Math.round(diff / 6e4) + ' min atrás';
+    if (diff < 864e5) return Math.round(diff / 36e5) + ' h atrás';
+    if (diff < 1728e5) return 'ontem';
+    return new Date(ts).toLocaleDateString('pt-BR');
   }
 
   // ───────────── motion: contadores, voos e memória entre telas ─────────────
@@ -173,53 +182,43 @@
     </div>`;
   }
 
-  // ───────────── home v3 (editorial photo-first) ─────────────
-  let homeQuery = '';
+  // ───────────── home v4 ("PinPoints", Duolingo-style) ─────────────
   let homeCat = 'todos';
   const CATS = [
-    ['todos', 'Todos'], ['historico', 'Histórico'], ['cultura', 'Cultura'],
+    ['todos', '✨ Todas'], ['historico', 'Histórico'], ['cultura', 'Cultura'],
     ['gastronomia', 'Gastronomia'], ['natureza', 'Natureza'], ['evento', 'Evento'],
   ];
 
-  function homeFiltered() {
-    const feed = Backend.getHomeFeed(Sim);
-    const q = homeQuery.trim().toLowerCase();
-    const missions = feed.missions.filter((m) => !q || m.name.toLowerCase().includes(q));
-    const places = feed.standalone_places.filter((p) =>
-      (homeCat === 'todos' || p.category === homeCat) &&
-      (!q || p.name.toLowerCase().includes(q)));
-    return { missions, places };
-  }
-
-  function missionCardsHtml(missions) {
+  function conquestCardsHtml(missions) {
     return missions.map((m) => {
-      const pct = m.progress.total ? Math.round((m.progress.completed / m.progress.total) * 100) : 0;
       const glow = recentlyUpdated[m.id] && Date.now() - recentlyUpdated[m.id] < 9000 ? 'glow-new' : '';
-      const glass = m.user_status === 'upcoming'
-        ? `<div class="ph-t">${esc(m.name)}</div>
-           <div class="ph-m">${ic('lock')} Abre em ${fmtDate(m.starts_at)} · +${m.bonus_points} pts</div>`
-        : `<div class="ph-t">${esc(m.name)}</div>
-           <div class="ph-m">${ic('map-pin')} ${m.progress.total} locais · bônus +${m.bonus_points}</div>
-           <div class="ph-bar"><div style="width:${pct}%"></div></div>
-           <div class="ph-pm"><span>${m.progress.completed}/${m.progress.total} check-ins</span><span>${pct}%</span></div>`;
-      return `<div class="ph-card ${glow}" data-mission="${m.id}">
-        <img src="${m.cover_image_url || ''}" loading="lazy" alt="" onerror="this.remove()">
-        <div class="ph-badge">${m.badge}</div>
-        ${m.user_status === 'completed' ? '<div class="ph-done">✓</div>' : ''}
-        <div class="ph-glass">${glass}</div>
+      const chip = m.user_status === 'completed' ? '<span class="ccchip done">Concluída ✓</span>'
+        : m.user_status === 'upcoming' ? `<span class="ccchip">Abre ${fmtDate(m.starts_at).slice(0, 5)}</span>`
+        : `<span class="ccchip">${m.progress.completed}/${m.progress.total} locais</span>`;
+      return `<div class="cq-card ${glow}" data-mission="${m.id}">
+        <div class="cq-top"><div class="cq-ic">${m.badge}</div>${chip}</div>
+        <div class="cq-name">${esc(m.name)}</div>
+        <div class="cq-desc">${esc(m.description || '')}</div>
+        <span class="cq-pts ${m.user_status === 'completed' ? 'done' : ''}">${m.user_status === 'completed' ? '🏆 Badge conquistado' : '+' + m.bonus_points + ' Pts Extra'}</span>
       </div>`;
-    }).join('') || '<p class="muted" style="padding:10px 4px">Nenhuma missão encontrada.</p>';
+    }).join('') || '<p class="muted" style="padding:10px 4px">Nenhuma conquista por aqui.</p>';
   }
 
-  function exploreRowsHtml(places) {
+  function placeCardsHtml(places) {
     return places.map((p) => `
-      <div class="p-row ${p.user_status === 'completed' ? 'done' : ''}" data-place="${p.id}">
-        <div class="p-thumb"><span class="pe">${p.emoji}</span><img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()"></div>
-        <div class="info"><div class="nm">${esc(p.name)}</div>
-          <div class="mt">${esc(p.category)} · ${fmtDist(p.distance_m)}</div></div>
-        <div class="right">${p.user_status === 'completed'
-          ? `<div class="done-ic">${ic('check')}</div>`
-          : `<div class="pts">+${p.base_points} pts</div>`}</div>
+      <div class="pl-card" data-place="${p.id}">
+        <div class="pl-photo">
+          <span class="pl-fb">${p.emoji}</span>
+          <img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()">
+          <span class="pl-chip cat">${esc(p.category)}</span>
+          <span class="pl-chip dist">${ic('map-pin')} ${fmtDist(p.distance_m)}</span>
+        </div>
+        <div class="pl-body">
+          <div class="pl-name">${p.emoji} ${esc(p.name)}</div>
+          ${p.user_status === 'completed'
+            ? '<span class="pl-pts done">Visitado ✓</span>'
+            : `<span class="pl-pts">+${p.base_points} Pts</span>`}
+        </div>
       </div>`).join('') || '<p class="muted">Nada por aqui com esse filtro.</p>';
   }
 
@@ -230,71 +229,46 @@
       c.addEventListener('click', () => openSheet(c.dataset.place)));
   }
 
-  /* atualiza só as listas (preserva o foco da busca enquanto digita) */
-  function updateHomeLists() {
-    const el = document.getElementById('screen-home');
-    const { missions, places } = homeFiltered();
-    const mEl = el.querySelector('#home-missions');
-    if (mEl) mEl.innerHTML = missionCardsHtml(missions);
-    const pEl = el.querySelector('#home-explore');
-    if (pEl) pEl.innerHTML = exploreRowsHtml(places);
-    const cnt = el.querySelector('#home-count');
-    if (cnt) cnt.textContent = places.length + ' lugares';
-    bindHomeLists(el);
-    UI.refreshIcons();
-  }
-
   function renderHome(entering) {
     const el = document.getElementById('screen-home');
-    // digitando na busca: re-render completo roubaria o foco → só listas
-    if (!entering && el.querySelector('#home-search') === document.activeElement) {
-      updateHomeLists();
-      return;
-    }
     const st = el.scrollTop;
     const stats = Backend.getStats();
     const lvl = levelInfo(stats.points);
-    const { missions, places } = homeFiltered();
-    const ringLen = ((lvl.pct / 100) * 131.9).toFixed(1);
+    const feed = Backend.getHomeFeed(Sim);
+    const places = feed.standalone_places.filter((p) => homeCat === 'todos' || p.category === homeCat);
 
     el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
       <div class="home-top">
-        <div><div class="hi">Olá, viajante 👋</div>
-        <div class="hi-sub">Explore o mundo, colecione conquistas</div></div>
-        <button class="avatar-ring" data-profile title="${lvl.name} · ${lvl.pct}%">
-          <svg viewBox="0 0 48 48"><circle class="rbg" cx="24" cy="24" r="21"/><circle class="rfg" cx="24" cy="24" r="21" stroke-dasharray="${ringLen} 131.9"/></svg>
-          <span class="em">🧭</span>
-        </button>
+        <div><span class="eyebrow">${esc(lvl.name)}</span>
+        <div class="hi">Olá, Guilherme</div></div>
+        <button class="bellbtn" data-bell>${ic('bell')}</button>
       </div>
-      <div class="searchbar">
-        ${ic('search')}
-        <input id="home-search" placeholder="Buscar lugares e missões" value="${esc(homeQuery)}" autocomplete="off">
-        <button class="sfilter" data-sfilter>${ic('sliders-horizontal')}</button>
-      </div>
-      <div class="level-strip">
-        <div class="ls-info"><b>${lvl.emoji} ${esc(lvl.name)}</b>
-          <span>${lvl.max ? stats.points + ' XP' : `<span data-cuk="xp" data-cuv="${lvl.cur}">${lvl.cur}</span> / ${lvl.need} XP`}</span></div>
-        <div class="ls-bar"><div style="width:${lvl.pct}%"></div></div>
+      <div class="level-card">
+        <div class="lc-top">
+          <div class="lc-ic">${lvl.emoji}</div>
+          <div><div class="lc-name">${esc(lvl.name)}</div>
+          <div class="lc-sub">${lvl.max
+            ? `<span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> PinPoints · nível máximo`
+            : `<span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> / ${lvl.nextAt} PinPoints para o próximo`}</div></div>
+          <span class="lc-trophy">${ic('trophy')}</span>
+        </div>
+        <div class="bar"><div style="width:${lvl.pct}%"></div></div>
       </div>
       <div class="chips">${CATS.map(([k, label]) =>
         `<button class="chip ${homeCat === k ? 'on' : ''}" data-cat="${k}">${label}</button>`).join('')}</div>
       ${Sim.accuracy > 50 ? '<div class="gps-warn">📡 Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
-      <div class="sec row"><h3>Missões em destaque</h3><span class="link" data-see-map>Ver no mapa</span></div>
-      <div class="mcarousel" id="home-missions">${missionCardsHtml(missions)}</div>
-      <div class="sec row"><h3>Para explorar</h3><span class="muted" id="home-count">${places.length} lugares</span></div>
-      <div id="home-explore">${exploreRowsHtml(places)}</div>
+      <div class="sec row"><h3>🏆 Trilhas & Conquistas</h3><span class="link" data-see-rank>Ranking</span></div>
+      <div class="mcarousel" id="home-missions">${conquestCardsHtml(feed.missions)}</div>
+      <div class="sec row"><h3>🧭 Lugares para Explorar</h3><span class="link" data-see-map>Ver no mapa</span></div>
+      <div id="home-explore">${placeCardsHtml(places)}</div>
     </div>`;
     el.scrollTop = st;
 
     bindHomeLists(el);
-    el.querySelector('[data-profile]').onclick = () => switchTab('profile');
+    el.querySelector('[data-bell]').onclick = () =>
+      toast('🔔 Tudo em dia! Notificações chegam na v2.', '');
     el.querySelector('[data-see-map]').onclick = () => switchTab('map');
-    el.querySelector('[data-sfilter]').onclick = () =>
-      toast('🎛️ Filtros avançados (distância, pontos) chegam na v2', '');
-    el.querySelector('#home-search').addEventListener('input', (e) => {
-      homeQuery = e.target.value;
-      updateHomeLists();
-    });
+    el.querySelector('[data-see-rank]').onclick = () => switchTab('social');
     el.querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => {
       homeCat = b.dataset.cat;
       buzz(8);
@@ -341,8 +315,8 @@
     el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
       <div class="profile-hero">
         <div class="avatar">🧭</div>
-        <div><div class="nm">Viajante</div>
-        <div class="rl">${lvl.emoji} ${esc(lvl.name)} · ${stats.points} pts</div></div>
+        <div><div class="nm">Guilherme</div>
+        <div class="rl">${lvl.emoji} ${esc(lvl.name)} · ${stats.points} PinPoints</div></div>
       </div>
       ${xpCard()}
       ${statsRow()}
@@ -484,12 +458,48 @@
       toast('💬 Chat entre amigos chega na v2', ''));
   }
 
+  // ───────────── feed social ─────────────
+  function renderFeed(entering) {
+    const el = document.getElementById('screen-feed');
+    const st = el.scrollTop;
+    const items = Backend.getFeed();
+
+    const posts = items.map((p) => `
+      <div class="post" data-id="${p.id}">
+        <div class="ph">
+          ${avatar(p, 'sm')}
+          <div><div class="pn">${p.you ? 'Você' : esc(p.name)}</div>
+          <div class="pm">${esc(levelInfo(p.points).name)} · ${timeAgo(p.ts)}</div></div>
+        </div>
+        <p class="ptext">${esc(p.text)}</p>
+        ${p.photo_url ? `<img class="pimg" src="${p.photo_url}" loading="lazy" alt="" onerror="this.remove()">` : ''}
+        <div class="pact">
+          <button class="plike ${p.liked ? 'on' : ''}" data-like="${p.id}">${ic('heart')} ${p.likes}</button>
+          <button class="pcmt" data-cmt>${ic('message-circle')} ${p.comments}</button>
+        </div>
+      </div>`).join('') || '<p class="muted">Faça um check-in para inaugurar o feed! 📍</p>';
+
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
+      <span class="eyebrow chip">Comunidade</span>
+      <div class="hi" style="font-size:24px;font-weight:900;margin:8px 0 16px">Feed Social</div>
+      ${posts}
+    </div>`;
+    el.scrollTop = st;
+
+    el.querySelectorAll('[data-like]').forEach((b) => b.onclick = () => {
+      buzz(10);
+      Backend.toggleLike(b.dataset.like);
+    });
+    el.querySelectorAll('[data-cmt]').forEach((b) => b.onclick = () =>
+      toast('💬 Comentários chegam na v2', ''));
+  }
+
   // ───────────── mapa ─────────────
   function initMap() {
     if (map) return;
     map = L.map('appmap', { zoomControl: false }).setView([Sim.lat, Sim.lng], 15);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO',
     }).addTo(map);
     markersLayer = L.layerGroup().addTo(map);
 
@@ -509,7 +519,9 @@
   function refreshMarkers() {
     if (!map) return;
     markersLayer.clearLayers();
-    Backend.getMapPins().forEach((pin, i) => {
+    let pins = Backend.getMapPins();
+    if (mapFilter === 'missions') pins = pins.filter((p) => p.kind === 'mission');
+    pins.forEach((pin, i) => {
       const cls = pin.user_status === 'completed' ? 'done'
         : pin.user_status === 'locked' ? 'locked' : pin.kind;
       const mini = pin.user_status === 'completed' ? '<span class="mini">✓</span>'
@@ -540,6 +552,51 @@
         }).addTo(map);
       }
     }
+  }
+
+  // ───────────── overlay do mapa: busca, chips e carrossel ─────────────
+  let mapFilter = 'all';
+  let mapQuery = '';
+
+  function renderMapOverlay() {
+    if (activeTab !== 'map') return;
+    const cardsEl = document.getElementById('map-cards');
+    if (!cardsEl) return;
+    let list = Backend.getMapPins().filter((p) => p.user_status !== 'locked');
+    if (mapFilter === 'missions') list = list.filter((p) => p.kind === 'mission');
+    const q = mapQuery.trim().toLowerCase();
+    if (q) list = list.filter((p) => (p.name || '').toLowerCase().includes(q));
+    list.sort((a, b) =>
+      Backend.haversine(Sim.lat, Sim.lng, a.lat, a.lng) -
+      Backend.haversine(Sim.lat, Sim.lng, b.lat, b.lng));
+
+    cardsEl.innerHTML = list.slice(0, 8).map((p) => {
+      const d = Backend.haversine(Sim.lat, Sim.lng, p.lat, p.lng);
+      return `<div class="mp-card" data-place="${p.id}">
+        <div class="mp-thumb"><span>${p.emoji}</span><img src="${p.photo_url || ''}" loading="lazy" alt="" onerror="this.remove()"></div>
+        <div class="mp-info"><b>${esc(p.name)}</b>
+        <span>${esc(p.category)} · ${fmtDist(d)}${p.user_status === 'completed' ? ' · ✓ visitado' : ''}</span></div>
+        <span class="mp-go">${ic('chevron-right')}</span>
+      </div>`;
+    }).join('') || '<div class="mp-card empty">Nada encontrado por aqui…</div>';
+
+    cardsEl.querySelectorAll('[data-place]').forEach((c) =>
+      c.onclick = () => openSheet(c.dataset.place));
+    UI.refreshIcons();
+  }
+
+  function initMapOverlay() {
+    const inp = document.getElementById('map-search');
+    if (inp) inp.addEventListener('input', (e) => { mapQuery = e.target.value; renderMapOverlay(); });
+    document.querySelectorAll('[data-mfilter]').forEach((b) => b.onclick = () => {
+      mapFilter = b.dataset.mfilter;
+      buzz(8);
+      document.querySelectorAll('[data-mfilter]').forEach((x) => x.classList.toggle('on', x === b));
+      refreshMarkers();
+      renderMapOverlay();
+    });
+    const fab = document.getElementById('map-fab');
+    if (fab) fab.onclick = () => { if (map) map.setView([Sim.lat, Sim.lng], 16); buzz(10); };
   }
 
   // ───────────── sheet (detalhe de local / missão) ─────────────
@@ -770,7 +827,7 @@
   }
 
   // ───────────── tabs do telefone ─────────────
-  const TAB_ORDER = ['home', 'map', 'social', 'profile'];
+  const TAB_ORDER = ['home', 'map', 'feed', 'social', 'profile'];
   function switchTab(tab) {
     const dir = TAB_ORDER.indexOf(tab) >= TAB_ORDER.indexOf(activeTab) ? 'r' : 'l';
     activeTab = tab;
@@ -887,7 +944,9 @@
     if (activeTab === 'home') renderHome(entering);
     else if (activeTab === 'profile') renderProfile(entering);
     else if (activeTab === 'social') renderSocial(entering);
+    else if (activeTab === 'feed') renderFeed(entering);
     refreshMarkers();
+    renderMapOverlay();
     renderSheet();
     UI.refreshIcons();
     runCounters(entering);
@@ -898,6 +957,7 @@
     document.querySelectorAll('.tabbar button').forEach((b) =>
       b.addEventListener('click', () => switchTab(b.dataset.tab)));
     bindSimPanel();
+    initMapOverlay();
 
     // splash de identidade: 1x por sessão, toque pula
     const splash = document.getElementById('splash');

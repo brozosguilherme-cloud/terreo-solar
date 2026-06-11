@@ -168,6 +168,19 @@ const at = (placeId, over) => {
     'adicionar pessoa marca pedido como enviado');
   ok(typeof rankBefore === 'number' && B.getSocial().my_rank >= 1, 'minha posição é calculada');
 
+  console.log('\n— Feed social —');
+  const feed = B.getFeed();
+  ok(feed.length > 0, 'feed traz posts');
+  ok(feed.every((p, i, a) => i === 0 || a[i - 1].ts >= p.ts), 'feed ordenado do mais recente');
+  ok(feed.some((p) => p.id.indexOf('ck:') === 0 && p.you), 'meus check-ins viram posts ao vivo');
+  ok(feed.some((p) => p.id.indexOf('ua:') === 0), 'conquistas desbloqueadas viram posts');
+  const post = feed.find((p) => p.id.indexOf('post:') === 0);
+  const likesBefore = post.likes;
+  B.toggleLike(post.id);
+  ok(B.getFeed().find((p) => p.id === post.id).likes === likesBefore + 1, 'curtir incrementa');
+  B.toggleLike(post.id);
+  ok(B.getFeed().find((p) => p.id === post.id).likes === likesBefore, 'descurtir reverte');
+
   console.log(`\n${'─'.repeat(40)}\n${passed} passaram · ${failed} falharam\n`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error('Erro fatal no teste:', e); process.exit(1); });
