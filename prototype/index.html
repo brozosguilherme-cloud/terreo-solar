@@ -12,7 +12,7 @@
 <title>TravelQuest — Protótipo local (dados mockados)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -34,7 +34,19 @@
       <div class="phone">
         <div id="splash"><div class="slogo">TravelQuest</div><div class="stag">Transforme viagens em conquistas</div></div>
         <div id="screen-home" class="screen"></div>
-        <div id="screen-map" class="screen hidden"><div id="appmap"></div></div>
+        <div id="screen-map" class="screen hidden">
+          <div id="appmap"></div>
+          <div class="map-top">
+            <div class="map-search"><i data-lucide="search"></i><input id="map-search" placeholder="Encontrar destinos" autocomplete="off"></div>
+            <div class="map-chips">
+              <button class="mchip on" data-mfilter="all">✨ Todos</button>
+              <button class="mchip" data-mfilter="missions">⚡ Só missões</button>
+            </div>
+          </div>
+          <button id="map-fab" title="Ir para minha posição"><i data-lucide="navigation"></i></button>
+          <div id="map-cards"></div>
+        </div>
+        <div id="screen-feed" class="screen hidden"></div>
         <div id="screen-social" class="screen hidden"></div>
         <div id="screen-profile" class="screen hidden"></div>
 
@@ -43,10 +55,11 @@
         <div id="toasts"></div>
 
         <nav class="tabbar">
-          <button data-tab="home" class="active"><i data-lucide="home"></i><span class="tdot"></span></button>
-          <button data-tab="map"><i data-lucide="map"></i><span class="tdot"></span></button>
-          <button data-tab="social"><i data-lucide="users"></i><span class="tdot"></span></button>
-          <button data-tab="profile"><i data-lucide="circle-user-round"></i><span class="tdot"></span></button>
+          <button data-tab="home" class="active" aria-label="Início"><i data-lucide="compass"></i></button>
+          <button data-tab="map" aria-label="Mapa"><i data-lucide="map"></i></button>
+          <button data-tab="feed" aria-label="Feed"><i data-lucide="layout-grid"></i></button>
+          <button data-tab="social" aria-label="Ranking"><i data-lucide="trophy"></i></button>
+          <button data-tab="profile" aria-label="Perfil"><i data-lucide="circle-user-round"></i></button>
         </nav>
       </div>
     </div>
