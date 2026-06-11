@@ -122,6 +122,20 @@
       checkins: [],
       user_achievements: [],
       ledger: [],
+
+      // ─── Social: amigos, pedidos e sugestões ───
+      // status: 'friend' | 'request_in' | 'suggested' | 'requested_out' | 'none'
+      people: [
+        { id: 'f1', name: 'Marina Costa', hue: 340, points: 480, mutual: 12, status: 'friend' },
+        { id: 'f2', name: 'Rafael Lima', hue: 210, points: 320, mutual: 8, status: 'friend' },
+        { id: 'f3', name: 'Júlia Severo', hue: 270, points: 1280, mutual: 21, status: 'friend' },
+        { id: 'f4', name: 'Lucas Andrade', hue: 150, points: 95, mutual: 4, status: 'friend' },
+        { id: 'r1', name: 'Bruno Tavares', hue: 25, points: 510, mutual: 3, status: 'request_in' },
+        { id: 'r2', name: 'Ana Beatriz', hue: 300, points: 850, mutual: 5, status: 'request_in' },
+        { id: 's1', name: 'Pedro Sales', hue: 190, points: 210, mutual: 2, status: 'suggested' },
+        { id: 's2', name: 'Carla Mendes', hue: 45, points: 1620, mutual: 7, status: 'suggested' },
+        { id: 's3', name: 'Tiago Nunes', hue: 110, points: 60, mutual: 1, status: 'suggested' },
+      ],
     };
   };
 })();
