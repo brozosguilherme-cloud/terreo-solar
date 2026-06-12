@@ -17,9 +17,9 @@
     let i = 0;
     while (i + 1 < LEVELS.length && points >= LEVELS[i + 1].at) i++;
     const cur = LEVELS[i], next = LEVELS[i + 1];
-    if (!next) return { name: cur.name, emoji: cur.emoji, cur: points, need: points, nextAt: points, pct: 100, max: true };
+    if (!next) return { name: cur.name, emoji: cur.emoji, cur: points, need: points, nextAt: points, nextName: null, pct: 100, max: true };
     return {
-      name: cur.name, emoji: cur.emoji, max: false, nextAt: next.at,
+      name: cur.name, emoji: cur.emoji, max: false, nextAt: next.at, nextName: next.name,
       cur: points - cur.at, need: next.at - cur.at,
       pct: Math.min(100, Math.round(((points - cur.at) / (next.at - cur.at)) * 100)),
     };
@@ -187,7 +187,7 @@
       const chip = m.user_status === 'completed' ? '<span class="ccchip done">Concluída ✓</span>'
         : m.user_status === 'upcoming' ? `<span class="ccchip">Abre ${fmtDate(m.starts_at).slice(0, 5)}</span>`
         : `<span class="ccchip">${m.progress.completed}/${m.progress.total} locais</span>`;
-      return `<div class="cq-card ${glow}" data-mission="${m.id}">
+      return `<div class="cq-card g-${m.category || 'conquista'} ${glow}" data-mission="${m.id}">
         <div class="cq-top"><div class="cq-ic">${m.badge}</div>${chip}</div>
         <div class="cq-name">${esc(m.name)}</div>
         <div class="cq-desc">${esc(m.description || '')}</div>
@@ -229,27 +229,24 @@
     const feed = Backend.getHomeFeed(Sim);
     const places = feed.standalone_places.filter((p) => homeCat === 'todos' || p.category === homeCat);
 
-    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="home-top">
-        <div><span class="eyebrow">${esc(lvl.name)}</span>
-        <div class="hi">Olá, Guilherme</div></div>
-        <div class="home-actions">
-          <div class="streak-pill ${stats.streak.today ? 'on' : ''}" title="${stats.streak.today ? 'Ofensiva ativa!' : stats.streak.at_risk ? 'Faça um check-in hoje para manter!' : 'Faça um check-in para começar uma ofensiva'}">${ic('flame')} ${stats.streak.count}</div>
-          <button class="bellbtn" data-bell>${ic('bell')}</button>
+    el.innerHTML = `
+      <div class="band ${entering ? 'band-in' : ''}">
+        <div class="home-top">
+          <div><span class="eyebrow">${esc(lvl.name)}</span>
+          <div class="hi">Olá, Guilherme</div></div>
+          <div class="home-actions">
+            <div class="streak-pill glass ${stats.streak.today ? 'on' : ''}" title="${stats.streak.today ? 'Ofensiva ativa!' : stats.streak.at_risk ? 'Faça um check-in hoje para manter!' : 'Faça um check-in para começar uma ofensiva'}">${ic('flame')} ${stats.streak.count}</div>
+            <button class="bellbtn glassbtn" data-bell>${ic('bell')}</button>
+          </div>
+        </div>
+        <div class="lvlrow">
+          <div class="lr-top"><b>${lvl.max ? '👑 Nível máximo' : lvl.emoji + ' Rumo a ' + esc(lvl.nextName)}</b>
+            <span><span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span>${lvl.max ? '' : ' / ' + lvl.nextAt} PinPoints</span></div>
+          <div class="bar"><div style="width:${lvl.pct}%"></div></div>
         </div>
       </div>
-      <div class="level-card">
-        <div class="lc-top">
-          <div class="lc-ic">${lvl.emoji}</div>
-          <div><div class="lc-name">${esc(lvl.name)}</div>
-          <div class="lc-sub">${lvl.max
-            ? `<span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> PinPoints · nível máximo`
-            : `<span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> / ${lvl.nextAt} PinPoints para o próximo`}</div></div>
-          <span class="lc-trophy">${ic('trophy')}</span>
-        </div>
-        <div class="bar"><div style="width:${lvl.pct}%"></div></div>
-      </div>
-      <div class="chips">${CATS.map(([k, label]) =>
+      <div class="over ${entering ? 'stagger' : ''}">
+        <div class="chips">${CATS.map(([k, label]) =>
         `<button class="chip ${homeCat === k ? 'on' : ''}" data-cat="${k}">${label}</button>`).join('')}</div>
       ${Sim.accuracy > 50 ? '<div class="gps-warn">📡 Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
       <div class="sec row"><h3>🏆 Trilhas & Conquistas</h3><span class="link" data-see-rank>Ranking</span></div>
@@ -307,13 +304,20 @@
       </div>`;
     }).join('') || '<p class="muted">Sem movimentações ainda.</p>';
 
-    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="profile-hero">
-        <div class="avatar">🧭</div>
-        <div><div class="nm">Guilherme</div>
-        <div class="rl">${lvl.emoji} ${esc(lvl.name)} · ${stats.points} PinPoints</div></div>
+    el.innerHTML = `
+      <div class="band compact ${entering ? 'band-in' : ''}">
+        <div class="profile-hero">
+          <div class="avatar">🧭</div>
+          <div><div class="nm">Guilherme</div>
+          <div class="rl">${lvl.emoji} ${esc(lvl.name)} · ${stats.points} PinPoints</div></div>
+        </div>
+        <div class="lvlrow">
+          <div class="lr-top"><b>${lvl.max ? '👑 Nível máximo' : 'Rumo a ' + esc(lvl.nextName)}</b>
+            <span><span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span>${lvl.max ? '' : ' / ' + lvl.nextAt} PinPoints</span></div>
+          <div class="bar"><div style="width:${lvl.pct}%"></div></div>
+        </div>
       </div>
-      ${xpCard()}
+      <div class="over ${entering ? 'stagger' : ''}">
       ${statsRow()}
       <div class="sec"><h3>Conquistas</h3><p>${prof.badges.length} de ${allMissions.length} desbloqueadas</p></div>
       <div class="badges-grid">${badgeCards}</div>
@@ -403,11 +407,14 @@
         ${sugs}`;
     }
 
-    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="app-head">
-        <div class="greet">Social<small>Compita e explore junto</small></div>
-        <span class="level-pill">#${soc.my_rank} no ranking</span>
+    el.innerHTML = `
+      <div class="band compact ${entering ? 'band-in' : ''}">
+        <div class="app-head">
+          <div class="greet">Social<small>Compita e explore junto</small></div>
+          <span class="level-pill">#${soc.my_rank} no ranking</span>
+        </div>
       </div>
+      <div class="over ${entering ? 'stagger' : ''}">
       <div class="seg">
         <button class="${socialSeg === 'ranking' ? 'on' : ''}" data-seg="ranking">🏆 Ranking</button>
         <button class="${socialSeg === 'friends' ? 'on' : ''}" data-seg="friends">Amigos${soc.requests.length ? `<span class="count-pill">${soc.requests.length}</span>` : ''}</button>
@@ -477,11 +484,13 @@
         </div>
       </div>`).join('') || '<p class="muted">Faça um check-in para inaugurar o feed! 📍</p>';
 
-    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <span class="eyebrow chip">Comunidade</span>
-      <div class="hi" style="font-size:24px;font-weight:900;margin:8px 0 16px">Feed Social</div>
-      ${posts}
-    </div>`;
+    el.innerHTML = `
+      <div class="band compact ${entering ? 'band-in' : ''}">
+        <span class="eyebrow chip">Comunidade</span>
+        <div class="hi" style="margin-top:10px">Feed Social</div>
+        <div class="hi-sub">O que sua tripulação anda explorando</div>
+      </div>
+      <div class="over ${entering ? 'stagger' : ''}">${posts}</div>`;
     el.scrollTop = st;
 
     el.querySelectorAll('[data-like]').forEach((b) => b.onclick = () => {
