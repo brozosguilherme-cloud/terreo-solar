@@ -128,9 +128,12 @@
         const user_status = pr.unlocked ? 'completed'
           : w === 'upcoming' ? 'upcoming'
           : pr.completed > 0 ? 'in_progress' : 'not_started';
+        const firstLink = linksOf(a.id)[0];
+        const catPlace = firstLink ? placeById(firstLink.place_id) : null;
         return {
           id: a.id, name: a.name, badge: a.badge, bonus_points: a.bonus_points,
           cover_image_url: a.cover_image_url, description: a.description,
+          category: catPlace ? catPlace.category : 'conquista',
           starts_at: a.starts_at, ends_at: a.ends_at, window: w,
           progress: { completed: pr.completed, total: pr.needed },
           user_status, nearest_pending_place: nearest,
