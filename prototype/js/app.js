@@ -152,21 +152,13 @@
   }
 
   // ───────────── telas ─────────────
-  function chipFor(st) {
-    return {
-      in_progress: '<span class="statuschip chip-progress">Em progresso</span>',
-      not_started: '<span class="statuschip chip-new">Nova</span>',
-      upcoming: '<span class="statuschip chip-soon">Em breve</span>',
-      completed: '<span class="statuschip chip-done">✓ Concluída</span>',
-    }[st] || '';
-  }
-
   function statsRow() {
     const s = Backend.getStats();
     return `<div class="stats">
       <div class="stat">${ic('map-pin')}<b data-cuk="ck" data-cuv="${s.checkins}">${s.checkins}</b><span class="lbl">Check-ins</span></div>
-      <div class="stat">${ic('sparkles')}<b data-cuk="pts" data-cuv="${s.points}">${s.points}</b><span class="lbl">Pontos</span></div>
+      <div class="stat">${ic('sparkles')}<b data-cuk="pts" data-cuv="${s.points}">${s.points}</b><span class="lbl">PinPoints</span></div>
       <div class="stat">${ic('trophy')}<b data-cuk="aw" data-cuv="${s.achievements}">${s.achievements}</b><span class="lbl">Conquistas</span></div>
+      <div class="stat ${s.streak.today ? 'hot' : ''}">${ic('flame')}<b data-cuk="st" data-cuv="${s.streak.count}">${s.streak.count}</b><span class="lbl">Ofensiva${s.streak.at_risk ? ' ⚠️' : ''}</span></div>
     </div>`;
   }
 
@@ -218,7 +210,8 @@
             ? '<span class="pl-pts done">Visitado ✓</span>'
             : `<span class="pl-pts">+${p.base_points} Pts</span>`}
         </div>
-      </div>`).join('') || '<p class="muted">Nada por aqui com esse filtro.</p>';
+      </div>`).join('') ||
+      `<div class="gps-warn">Os locais de <b>${esc(homeCat)}</b> por aqui fazem parte de missões — confira em 🏆 Trilhas & Conquistas logo acima!</div>`;
   }
 
   function bindHomeLists(el) {
@@ -240,7 +233,10 @@
       <div class="home-top">
         <div><span class="eyebrow">${esc(lvl.name)}</span>
         <div class="hi">Olá, Guilherme</div></div>
-        <button class="bellbtn" data-bell>${ic('bell')}</button>
+        <div class="home-actions">
+          <div class="streak-pill ${stats.streak.today ? 'on' : ''}" title="${stats.streak.today ? 'Ofensiva ativa!' : stats.streak.at_risk ? 'Faça um check-in hoje para manter!' : 'Faça um check-in para começar uma ofensiva'}">${ic('flame')} ${stats.streak.count}</div>
+          <button class="bellbtn" data-bell>${ic('bell')}</button>
+        </div>
       </div>
       <div class="level-card">
         <div class="lc-top">
@@ -760,6 +756,7 @@
     const btnRect = btn ? btn.getBoundingClientRect() : null;
     const prevLvlName = levelInfo(Backend.getStats().points).name;
     const prevRank = Backend.getSocial().my_rank;
+    const prevStreakToday = Backend.getStats().streak.today;
     validating = placeId;
     renderSheet();
     try {
@@ -788,6 +785,12 @@
       if (socNow.my_rank < prevRank) {
         const passed = socNow.ranking.find((r) => r.rank === socNow.my_rank + 1);
         toast(`🔥 Você subiu para #${socNow.my_rank} no ranking${passed ? ' — ultrapassou ' + esc(passed.name) + '!' : '!'}`, 'ok');
+      }
+      const streakNow = Backend.getStats().streak;
+      if (streakNow.today && !prevStreakToday) {
+        toast(streakNow.count === 1
+          ? '🔥 Ofensiva iniciada! Volte amanhã para mantê-la.'
+          : `🔥 Ofensiva de ${streakNow.count} dias mantida! Volte amanhã.`, 'ok');
       }
     } catch (e) {
       validating = null;

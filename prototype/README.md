@@ -68,7 +68,7 @@ O "Resetar demo" devolve tudo para São Paulo.
 ## Testes automatizados das regras de negócio
 
 O fake backend (`js/backend.js`) espelha a RPC `perform_checkin` do doc 01 — mesmas
-validações, mesma ordem. As regras são verificadas por 36 asserts:
+validações, mesma ordem. As regras são verificadas por 58 asserts:
 
 ```bash
 node prototype/test/backend.test.js
@@ -76,9 +76,8 @@ node prototype/test/backend.test.js
 
 Cobre: geofence (`OUT_OF_RANGE`), tolerância `raio + min(accuracy, 50)`, `LOW_GPS_ACCURACY`,
 idempotência (`ALREADY_CHECKED_IN`), viagem impossível e mock location (→ `flagged`),
-desbloqueio transacional de conquista + bônus, estorno via ledger com revogação de conquista,
-ciclo de vida do admin (draft → publish → archive, checklist, trava de missão ativa) e
-janela de vigência de missão sazonal.
+desbloqueio transacional de conquista + bônus, estorno via ledger, ciclo de vida do admin,
+janela de vigência sazonal, realocação da demo, amigos/ranking, feed social e ofensiva (streak).
 
 ## O que dá para testar (e onde isso está nos docs)
 
@@ -126,7 +125,7 @@ prototype/
 │   ├── admin.js      # Admin: locais, wizard de conquistas, fila de revisão
 │   └── main.js       # bootstrap + re-render reativo (Bus)
 └── test/
-    └── backend.test.js  # 36 asserts das regras de negócio (node, zero deps)
+    └── backend.test.js  # 58 asserts das regras de negócio (node, zero deps)
 ```
 
 ## Caminho de evolução
