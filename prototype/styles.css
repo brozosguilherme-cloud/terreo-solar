@@ -1119,6 +1119,22 @@ body { background: #E9E7E1; }
 /* menos ruído: nada de emoji duplicado em texto corrido */
 .rank-row .lv, .req-row .mt, .friend-row .mt { text-transform: capitalize; }
 
+/* ofensiva (streak) */
+.home-actions { display: flex; align-items: center; gap: 8px; }
+.streak-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #fff; color: var(--ink-3); border: 1px solid rgba(33,31,28,.055);
+  box-shadow: var(--shadow-soft); border-radius: 99px; padding: 9px 14px;
+  font-weight: 900; font-size: 14px;
+}
+.streak-pill svg { width: 17px; height: 17px; }
+.streak-pill.on { color: var(--orange-deep); background: var(--orange-soft); border-color: var(--orange-line); }
+.streak-pill.on svg { fill: currentColor; animation: flameBeat 1.6s ease-in-out infinite; }
+@keyframes flameBeat { 50% { transform: scale(1.15) rotate(-4deg); } }
+.stats { grid-template-columns: 1fr 1fr; }
+.stat.hot .ic { color: var(--orange-deep); }
+.stat.hot .ic svg { fill: currentColor; }
+
 /* acessibilidade */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

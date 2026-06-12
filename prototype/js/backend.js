@@ -331,11 +331,33 @@
   }
 
   function getLedger() { return [...db.ledger].reverse(); }
+
+  /* Ofensiva (streak): dias consecutivos com ≥1 check-in válido,
+   * contando para trás a partir de hoje (relógio virtual).
+   * Se hoje ainda não tem check-in, a sequência de ontem fica "em risco". */
+  function getStreak() {
+    const dayKey = (t) => new Date(t).toISOString().slice(0, 10);
+    const days = new Set(db.checkins
+      .filter((c) => c.status !== 'revoked')
+      .map((c) => dayKey(Date.parse(c.created_at))));
+    const today = dayKey(now());
+    const back = (fromTs) => {
+      let n = 0;
+      const d = new Date(fromTs);
+      while (days.has(dayKey(d.getTime()))) { n++; d.setUTCDate(d.getUTCDate() - 1); }
+      return n;
+    };
+    if (days.has(today)) return { count: back(now()), today: true, at_risk: false };
+    const yesterday = back(now() - 864e5);
+    return { count: yesterday, today: false, at_risk: yesterday > 0 };
+  }
+
   function getStats() {
     return {
       checkins: db.checkins.filter((c) => c.status !== 'revoked').length,
       points: totalPoints(),
       achievements: db.user_achievements.length,
+      streak: getStreak(),
     };
   }
   function getProfile() {

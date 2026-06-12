@@ -12,6 +12,7 @@
 | [03 — Lógica do App (Frente 1)](./03-logica-app.md) | Home, Mapa, geofencing, anti-fraude, progresso de missões |
 | [04 — Lógica do Admin (Frente 2)](./04-logica-admin.md) | Wizards de criação, vinculação de locais, ciclo de vida do conteúdo |
 | [05 — UX e Máquina de Estados](./05-ux-estados.md) | Estados `bloqueado` / `pronto para check-in` / `concluído`, microcopy |
+| [06 — Social, Feed, Níveis e Ofensiva](./06-social-feed-niveis.md) | Amigos/ranking, feed como projeção de eventos, níveis (PinPoints) e streak |
 | [🧪 Protótipo navegável](../../prototype/README.md) | Demo local com dados mockados + simulador de GPS + testes das regras (`node prototype/test/backend.test.js`) |
 
 ## Glossário (linguagem ubíqua)

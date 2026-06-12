@@ -181,6 +181,22 @@ const at = (placeId, over) => {
   B.toggleLike(post.id);
   ok(B.getFeed().find((p) => p.id === post.id).likes === likesBefore, 'descurtir reverte');
 
+  console.log('\n— Ofensiva (streak) —');
+  B.reset();
+  const near = (id) => { const p = B._db().places.find((x) => x.id === id);
+    return { lat: p.lat + 0.0001, lng: p.lng + 0.0001, accuracy_m: 15 }; };
+  ok(B.getStats().streak.count === 0 && !B.getStats().streak.today, 'sem check-ins, ofensiva zero');
+  await B.performCheckin('p1', near('p1'));
+  ok(B.getStats().streak.count === 1 && B.getStats().streak.today, '1º check-in inicia a ofensiva');
+  B.addSkew(864e5); // amanhã
+  let s = B.getStats().streak;
+  ok(s.count === 1 && !s.today && s.at_risk, 'dia seguinte sem check-in: ofensiva em risco');
+  await B.performCheckin('p2', near('p2'));
+  ok(B.getStats().streak.count === 2 && B.getStats().streak.today, 'check-in no dia seguinte: 2 dias');
+  B.addSkew(2 * 864e5); // pula um dia inteiro
+  s = B.getStats().streak;
+  ok(s.count === 0 && !s.at_risk, 'pular um dia quebra a ofensiva');
+
   console.log(`\n${'─'.repeat(40)}\n${passed} passaram · ${failed} falharam\n`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error('Erro fatal no teste:', e); process.exit(1); });
