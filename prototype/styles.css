@@ -1108,3 +1108,252 @@ table.admin .actions button { font-size: 12.5px; padding: 6px 12px; }
   background: var(--green-soft); border-radius: 99px; padding: 3px 9px;
 }
 .mpr-chev { color: var(--ink-3); font-size: 20px; }
+
+/* ════════════════════════════════════════════════════════════
+   v9 "Explorador" — warm amber, nav flutuante, cards brancos
+   ════════════════════════════════════════════════════════════ */
+
+/* 1. Variáveis — âmbar e fundo bege quente */
+:root {
+  --bg: #F6F4EF;
+  --bg-soft: #ECEAE4;
+  --bg-card: #FFFFFF;
+  --ink: #1A1A1A;
+  --ink-2: #888888;
+  --ink-3: #C2BEB4;
+  --hair: #E6E3DC;
+
+  --accent: #E8952A;
+  --accent-press: #C47718;
+  --accent-soft: #FDF5E4;
+  --accent-soft-2: #FAF0D4;
+
+  --green: #1B8C3A;
+  --green-soft: #EBF6EE;
+  --red: #C13515;
+  --red-soft: #FBEFEC;
+
+  --shadow-card: 0 2px 14px rgba(0,0,0,.07);
+  --r: 16px;
+}
+
+/* 2. Fundo geral bege quente */
+body { background: var(--bg); }
+.screen { background: var(--bg); }
+#screen-map { background: #E8E5E0; }
+.phone { background: var(--bg); }
+
+/* 3. Topbar */
+.topbar { background: var(--bg); border-bottom-color: var(--hair); }
+
+/* 4. Tab bar → pílula flutuante */
+.tabbar {
+  left: 12px; right: 12px; bottom: 12px; top: auto;
+  height: 62px; border-radius: 99px;
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(24px);
+  border-top: none;
+  box-shadow: 0 6px 28px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.04);
+  padding: 7px 14px;
+}
+.tabbar button { color: var(--ink-3); border-radius: 99px; transition: color .15s; }
+.tabbar button.active { color: var(--accent); }
+/* círculo âmbar no ícone ativo */
+.tabbar button.active svg { filter: none; }
+
+/* 5. Header home */
+.eyebrow-head {
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 3px;
+}
+.big-head h1 { font-size: 27px; font-weight: 800; letter-spacing: -.03em; }
+.big-head p { display: none; }
+
+.notif-btn {
+  width: 42px; height: 42px; border-radius: 99px; border: none;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  display: flex; align-items: center; justify-content: center; color: var(--ink);
+  flex: 0 0 auto;
+}
+.notif-btn svg { width: 20px; height: 20px; stroke-width: 1.8; }
+.notif-btn:active { opacity: .8; }
+
+/* 6. Level card (white, amber bar) */
+.lvl-card {
+  background: var(--bg-card); border-radius: 18px;
+  padding: 16px 18px; margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+}
+.lc-row { display: flex; align-items: center; gap: 14px; margin-bottom: 13px; }
+.lc-icon {
+  width: 48px; height: 48px; flex: 0 0 48px; border-radius: 14px;
+  background: var(--accent-soft); display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.lc-body { flex: 1; min-width: 0; }
+.lc-name { font-size: 16px; font-weight: 700; letter-spacing: -.015em; }
+.lc-pts { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+.lc-trophy { color: var(--ink-3); display: flex; }
+.lc-trophy svg { width: 22px; height: 22px; stroke-width: 1.6; }
+.lc-streak {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12.5px; font-weight: 600; color: var(--ink-3); padding: 0 6px;
+}
+.lc-streak svg { width: 15px; height: 15px; }
+.lc-streak.on { color: var(--accent); }
+.lc-streak.on svg { fill: currentColor; }
+.lc-bar { height: 7px; background: var(--bg-soft); border-radius: 99px; overflow: hidden; }
+.lc-bar > div { height: 100%; background: var(--accent); border-radius: 99px; transition: width .7s cubic-bezier(.2,.8,.2,1); }
+
+/* 7. Filtros de categoria na home → pílulas simples */
+.hfilter {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -22px 4px; padding: 4px 22px 10px;
+}
+.hfilter::-webkit-scrollbar { display: none; }
+.hchip {
+  flex: 0 0 auto; border-radius: 99px; padding: 8px 16px;
+  font-size: 13px; font-weight: 600; white-space: nowrap; border: none;
+  background: var(--bg-card); color: var(--ink-2);
+  box-shadow: 0 1px 6px rgba(0,0,0,.07);
+  transition: background .12s, color .12s;
+}
+.hchip.on { background: var(--accent); color: #fff; }
+.hchip:active:not(.on) { background: var(--bg-soft); }
+
+/* 8. Section headers com ícone âmbar */
+.sec-h {
+  display: flex; align-items: center; gap: 9px; margin: 26px 0 14px;
+}
+.sec-h > .ic { color: var(--accent); }
+.sec-h > .ic svg { width: 21px; height: 21px; stroke-width: 2; }
+.sec-h h3 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.025em; flex: 1; }
+.sec-link {
+  font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer;
+}
+.sec-link:hover { color: var(--ink); }
+
+/* 9. Mission cards (carousel) → white cards limpos */
+.mcarousel { padding: 2px 22px 10px; margin: 0 -22px; }
+.mcard {
+  flex: 0 0 220px; background: var(--bg-card); border-radius: 18px;
+  padding: 16px; box-shadow: var(--shadow-card); cursor: pointer;
+  scroll-snap-align: start; transition: box-shadow .15s;
+}
+.mcard:active { box-shadow: 0 1px 6px rgba(0,0,0,.06); }
+.mcard.glow-new { box-shadow: 0 0 0 2px var(--accent), var(--shadow-card); }
+.mc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+.mc-icon {
+  width: 46px; height: 46px; border-radius: 13px;
+  background: var(--accent-soft); display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.mc-prog {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .07em; color: var(--ink-3);
+}
+.mc-title { font-size: 15px; font-weight: 700; letter-spacing: -.015em; margin-bottom: 5px; }
+.mc-sub { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; margin-bottom: 14px; min-height: 36px; }
+.mc-bonus {
+  display: inline-block; background: var(--accent-soft); color: var(--accent);
+  font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 99px;
+}
+.mc-bonus.done { background: var(--green-soft); color: var(--green); }
+
+/* 10. Place cards → horizontal, foto circular */
+.pcard {
+  display: flex; align-items: center; gap: 13px;
+  background: var(--bg-card); border-radius: 16px; padding: 12px 14px;
+  box-shadow: var(--shadow-card); margin-bottom: 10px; cursor: pointer;
+  transition: box-shadow .12s;
+}
+.pcard:active { box-shadow: 0 1px 6px rgba(0,0,0,.06); }
+.pc-photo {
+  width: 64px; height: 64px; flex: 0 0 64px; border-radius: 14px;
+  overflow: hidden; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.pc-photo .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pc-em { position: relative; z-index: 1; font-size: 26px; }
+.pc-body { flex: 1; min-width: 0; }
+.pc-chips { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.pc-cat {
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; color: var(--ink-3);
+  text-transform: uppercase;
+}
+.pc-sep { color: var(--ink-3); font-size: 10px; }
+.pc-dist {
+  font-size: 10px; font-weight: 600; color: var(--ink-3);
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.pc-dist svg { width: 10px; height: 10px; stroke-width: 2; }
+.pc-name { font-size: 15px; font-weight: 700; letter-spacing: -.015em; color: var(--ink); }
+.pc-desc {
+  font-size: 12px; color: var(--ink-2); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pc-pts-badge {
+  font-size: 11.5px; font-weight: 700; color: var(--accent);
+  background: var(--accent-soft); border-radius: 99px; padding: 4px 9px;
+  flex-shrink: 0;
+}
+.pc-vist {
+  color: var(--green); display: flex; flex-shrink: 0;
+}
+.pc-vist svg { width: 18px; height: 18px; stroke-width: 2.2; }
+.pcard .pc-chev { color: var(--ink-3); font-size: 20px; flex-shrink: 0; }
+/* remove old place-card2 layout */
+.place-card2 .pc-row, .place-card2 > .tile { display: none !important; }
+
+/* 11. Mapa — barra de busca e filtros */
+.map-search { background: var(--bg-card); box-shadow: var(--shadow-card); }
+.map-chips .mchip { background: var(--bg-card); border-color: var(--hair); }
+.map-chips .mchip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mp-card { background: var(--bg-card); box-shadow: var(--shadow-card); }
+
+/* 12. Feed postcard com cena */
+.postcard { background: var(--bg-soft); position: relative; overflow: hidden; }
+.postcard .scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.postcard .pc { position: relative; z-index: 1; }
+.postcard .pc-label { z-index: 2; }
+
+/* 13. Social/perfil */
+.stat { background: var(--bg-card); border-color: var(--hair); box-shadow: var(--shadow-card); }
+.badge-card { background: var(--bg-card); border-color: var(--hair); box-shadow: var(--shadow-card); }
+.ledger-row .li { background: var(--bg-soft); }
+
+/* 14. Sheet (detail) */
+.sheet { background: var(--bg-card); }
+
+/* 15. Miscellaneous */
+.app-pad { padding: 22px 22px 104px; }
+.big-head { margin-bottom: 20px; }
+.catbar { display: none !important; }  /* replaced by hfilter */
+
+/* 16. Rank pill no cabeçalho social */
+.my-rank-pill {
+  background: var(--accent); color: #fff;
+  font-size: 12px; font-weight: 700; letter-spacing: .03em;
+  padding: 6px 14px; border-radius: 99px; align-self: flex-start; margin-top: 4px;
+}
+
+/* 17. Pódio de ranking */
+.podium {
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 10px; padding: 18px 0 24px;
+}
+.pod-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 96px;
+}
+.pod-col.first .pod-avt { transform: scale(1.12); }
+.pod-avt { margin-bottom: 2px; }
+.pod-name { font-size: 12px; font-weight: 700; text-align: center; color: var(--ink); letter-spacing: -.01em; }
+.pod-pts { font-size: 11px; color: var(--ink-2); }
+.pod-bar {
+  width: 100%; border-radius: 12px 12px 0 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; padding-top: 10px;
+}
+.pod-bar.p1 { height: 60px; background: linear-gradient(160deg, #FFE27A, #E8952A); }
+.pod-bar.p2 { height: 44px; background: linear-gradient(160deg, #E8E8E8, #B4B4B4); }
+.pod-bar.p3 { height: 34px; background: linear-gradient(160deg, #F4D2A6, #C8865A); }
