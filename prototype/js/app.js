@@ -225,8 +225,8 @@
     const pts = Backend.getStats().points;
     const lvl = levelInfo(pts);
     const label = lvl.max
-      ? `<span data-cuk="xp" data-cuv="${pts}">${pts}</span> XP`
-      : `<span data-cuk="xp" data-cuv="${lvl.cur}">${lvl.cur}</span> / ${lvl.need} XP`;
+      ? `<span data-cuk="xp" data-cuv="${pts}">${pts}</span> PinPoints`
+      : `<span data-cuk="xp" data-cuv="${lvl.cur}">${lvl.cur}</span> / ${lvl.need} PinPoints`;
     return `<div class="xp-card">
       <div class="row"><span>Experiência</span><b>${label}</b></div>
       <div class="bar"><div style="width:${lvl.pct}%"></div></div>
@@ -421,19 +421,19 @@
         ${top3[1] ? `<div class="pod-col">
           <div class="pod-avt">${avatar(top3[1], 'md')}</div>
           <div class="pod-name">${esc(top3[1].name.split(' ')[0])}</div>
-          <div class="pod-pts">${top3[1].points} pts</div>
+          <div class="pod-pts">${top3[1].points} PinPoints</div>
           <div class="pod-bar p2">🥈</div>
         </div>` : ''}
         <div class="pod-col first">
           <div class="pod-avt">${avatar(top3[0], 'md')}</div>
           <div class="pod-name">${esc(top3[0].name.split(' ')[0])}</div>
-          <div class="pod-pts">${top3[0].points} pts</div>
+          <div class="pod-pts">${top3[0].points} PinPoints</div>
           <div class="pod-bar p1">🥇</div>
         </div>
         ${top3[2] ? `<div class="pod-col">
           <div class="pod-avt">${avatar(top3[2], 'md')}</div>
           <div class="pod-name">${esc(top3[2].name.split(' ')[0])}</div>
-          <div class="pod-pts">${top3[2].points} pts</div>
+          <div class="pod-pts">${top3[2].points} PinPoints</div>
           <div class="pod-bar p3">🥉</div>
         </div>` : ''}
       </div>` : '';
@@ -443,7 +443,7 @@
           ${avatar(r, 'sm')}
           <div class="info"><div class="nm">${r.you ? 'Você' : esc(r.name)}</div>
             <div class="lv">${esc(levelInfo(r.points).name)}</div></div>
-          <span class="pts">${r.points} pts</span>
+          <span class="pts">${r.points} PinPoints</span>
         </div>`).join('') +
         '<p class="muted" style="margin-top:16px;font-size:13px">Faça um check-in e suba ao vivo.</p>';
     } else {
@@ -725,19 +725,19 @@
     let force = '';
     if (d.user_status === 'completed') {
       const flaggedNote = d.checkin && d.checkin.status === 'flagged' ? ' · em revisão' : '';
-      bar = `<div class="bar-status done">${ic('check')} Visitado em ${fmtDate(d.checkin && d.checkin.created_at)} · +${d.checkin ? d.checkin.points_awarded : d.base_points} pts${flaggedNote}</div>`;
+      bar = `<div class="bar-status done">${ic('check')} Visitado em ${fmtDate(d.checkin && d.checkin.created_at)} · +${d.checkin ? d.checkin.points_awarded : d.base_points} PinPoints${flaggedNote}</div>`;
     } else if (d.user_status === 'locked') {
       const up = d.missions.find((m) => m.window === 'upcoming');
       bar = `<div class="bar-status">${ic('lock')} ${up ? 'Disponível a partir de ' + fmtDate(up.starts_at) : 'Indisponível no momento'}</div>`;
       force = '<button class="force-link" data-force>Testar mesmo assim — o servidor valida</button>';
     } else if (validating === d.id) {
-      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> pts</b><span>validando…</span></div>
+      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> PinPoints</b><span>validando…</span></div>
         <button class="btn-cta" disabled><span class="spinner"></span>Confirmando…</button>`;
     } else if (ready) {
-      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> pts</b><span>você está no raio</span></div>
+      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> PinPoints</b><span>você está no raio</span></div>
         <button class="btn-cta ready" data-checkin>Fazer check-in</button>`;
     } else {
-      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> pts</b><span>a ${fmtDist(dist)} de você</span></div>
+      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> PinPoints</b><span>a ${fmtDist(dist)} de você</span></div>
         <button class="btn-cta" disabled>Chegue mais perto</button>`;
       force = '<button class="force-link" data-force>Testar mesmo assim — o servidor valida</button>';
     }
@@ -758,7 +758,7 @@
         <div class="stat-chips">
           <span class="schip">${ic('footprints')} ${fmtDist(dist)}</span>
           <span class="schip">${ic('target')} raio ${d.radius_m} m</span>
-          ${d.user_status === 'completed' ? `<span class="schip g">${ic('check')} Visitado</span>` : `<span class="schip a">${ic('star')} +${d.base_points} pts</span>`}
+          ${d.user_status === 'completed' ? `<span class="schip g">${ic('check')} Visitado</span>` : `<span class="schip a">${ic('star')} +${d.base_points} PinPoints</span>`}
         </div>
         ${d.user_status !== 'completed' ? `<div class="dt-actions"><button class="action-chip" data-route>${ic('navigation')} Como chegar</button></div>` : ''}
         ${missionsCtx}
@@ -799,7 +799,7 @@
         </div>
         <div class="mpr-i">
           <div class="mpr-n">${esc(p.name)}</div>
-          <div class="mpr-m">${done ? '✓ +' + p.base_points + ' pts' : fmtDist(p.distance_m)}</div>
+          <div class="mpr-m">${done ? '✓ +' + p.base_points + ' PinPoints' : fmtDist(p.distance_m)}</div>
         </div>
         <div class="mpr-r">${done ? '<span class="mpr-badge">✓</span>' : '<span class="mpr-chev">›</span>'}</div>
       </div>`;
@@ -812,11 +812,11 @@
         <button class="hbtn2 l" data-close>${ic('arrow-left')}</button>
         <div class="h2info">
           <div class="h2t">${esc(d.name)}</div>
-          <div class="h2s" style="text-transform:none">+${d.bonus_points} pts de bônus ao completar</div>
+          <div class="h2s" style="text-transform:none">+${d.bonus_points} PinPoints de bônus ao completar</div>
         </div>
       </div>
       <div class="page-body2" style="padding-bottom:30px">
-        ${d.unlocked ? `<div class="unlocked-banner">${ic('trophy')} Concluída em ${fmtDate(d.unlockedAt)} · +${d.bonus_points} pts creditados</div>` : ''}
+        ${d.unlocked ? `<div class="unlocked-banner">${ic('trophy')} Concluída em ${fmtDate(d.unlockedAt)} · +${d.bonus_points} PinPoints creditados</div>` : ''}
         <div class="mprogblock">
           <div class="mpb-row">
             <span class="mpb-frac">${d.progress.completed} de ${d.progress.total} locais visitados</span>
@@ -853,9 +853,9 @@
       buzz(res.checkin.status === 'flagged' ? [20, 40, 20] : 35);
       flyPoints(btnRect, '+' + res.checkin.points_awarded);
       if (res.checkin.status === 'flagged') {
-        toast(`+${res.checkin.points_awarded} pts — ⚠️ check-in sinalizado para revisão (veja Admin → Revisão)`, 'warn');
+        toast(`+${res.checkin.points_awarded} PinPoints — ⚠️ check-in sinalizado para revisão (veja Admin → Revisão)`, 'warn');
       } else {
-        toast(`✅ Check-in confirmado! +${res.checkin.points_awarded} pts (a ${res.validation.distance_m} m do centro)`, 'ok');
+        toast(`✅ Check-in confirmado! +${res.checkin.points_awarded} PinPoints (a ${res.validation.distance_m} m do centro)`, 'ok');
       }
       res.achievements_progress.forEach((ap) => {
         recentlyUpdated[ap.achievement_id] = Date.now(); // a Home vai brilhar neste card
@@ -912,7 +912,7 @@
       <div class="badge">${ap.badge || '🏆'}</div>
       <h2>${isLevel ? 'Você subiu de nível!' : 'Conquista desbloqueada!'}</h2>
       <div class="mn">${isLevel ? 'Novo título de viajante' : esc(ap.name)}</div>
-      <div class="bonus">${isLevel ? esc(ap.name) : '+' + ap.bonus_points + ' pts de bônus'}</div>
+      <div class="bonus">${isLevel ? esc(ap.name) : '+' + ap.bonus_points + ' PinPoints de bônus'}</div>
       <button>${isLevel ? 'Continuar a jornada' : 'Continuar explorando'}</button>`;
     el.classList.remove('hidden');
     buzz([30, 60, 90]);
