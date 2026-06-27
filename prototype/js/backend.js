@@ -209,9 +209,11 @@
     const a = achById(id);
     if (!a) return null;
     const pr = missionProgress(a);
+    const firstLink = linksOf(a.id)[0];
+    const catPlace = firstLink ? placeById(firstLink.place_id) : null;
     return {
       id: a.id, name: a.name, badge: a.badge, description: a.description,
-      cover_image_url: a.cover_image_url,
+      cover_image_url: a.cover_image_url, category: catPlace ? catPlace.category : 'conquista',
       bonus_points: a.bonus_points, window: windowState(a),
       starts_at: a.starts_at, ends_at: a.ends_at,
       progress: { completed: pr.completed, total: pr.needed },
