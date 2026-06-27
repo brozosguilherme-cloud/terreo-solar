@@ -5,6 +5,70 @@
   const fmtDist = (m) => Backend.fmtDist(m);
   const ic = (name) => `<span class="ic"><i data-lucide="${name}"></i></span>`;
 
+  // ───────────── sistema visual: cenas SVG + anéis ─────────────
+  const SCENES = {
+    historico:  { sky: ['#F4DCA9', '#E0973F'], sun: '#FFF1D6', sil: '#B96528', shape: 'sky' },
+    cultura:    { sky: ['#C9B7E8', '#6E51A8'], sun: '#ECDDFF', sil: '#4F3380', shape: 'sky' },
+    gastronomia:{ sky: ['#F7CBA6', '#DF6A3A'], sun: '#FFE3CC', sil: '#B84E24', shape: 'hill' },
+    natureza:   { sky: ['#C2E3A6', '#4F9B57', '#2F7E45'], sun: '#FCF8C8', sil: '#356E3B', shape: 'hill' },
+    evento:     { sky: ['#AFCBEF', '#3F77C9'], sun: '#DCEBFF', sil: '#2C5494', shape: 'sky' },
+    conquista:  { sky: ['#F4DCA9', '#E0973F'], sun: '#FFF1D6', sil: '#B96528', shape: 'sky' },
+  };
+  const SIL = {
+    sky: 'M0,100 V80 H7 V73 H13 V83 H20 V67 H28 V78 H35 V62 H43 V75 H50 V69 H58 V79 H65 V64 H73 V77 H81 V70 H88 V81 H95 V74 H100 V100 Z',
+    hillBack: 'M0,100 V88 Q26,74 52,86 Q78,96 100,82 V100 Z',
+    hillFront: 'M0,100 V92 Q30,80 58,90 Q82,98 100,90 V100 Z',
+  };
+  function sceneSVG(cat) {
+    const s = SCENES[cat] || SCENES.historico;
+    const id = 'sk_' + cat;
+    const stops = s.sky.map((c, i) =>
+      `<stop offset="${(i / (s.sky.length - 1)).toFixed(2)}" stop-color="${c}"/>`).join('');
+    const sil = s.shape === 'hill'
+      ? `<path d="${SIL.hillBack}" fill="${s.sil}" opacity=".5"/><path d="${SIL.hillFront}" fill="${s.sil}" opacity=".95"/>`
+      : `<path d="${SIL.sky}" fill="${s.sil}" opacity=".95"/>`;
+    return `<svg class="scene" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${stops}</linearGradient></defs>
+      <rect width="100" height="100" fill="url(#${id})"/>
+      <circle cx="73" cy="33" r="14" fill="${s.sun}" opacity=".88"/>
+      ${sil}
+    </svg>`;
+  }
+  function ringSVG(pct, size, sw, cls) {
+    const r = (size - sw) / 2, c = 2 * Math.PI * r;
+    const off = c * (1 - Math.max(0, Math.min(100, pct)) / 100);
+    return `<svg class="ring ${cls || ''}" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle class="rt" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${sw}"/>
+      <circle class="rp" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${sw}"
+        stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+    </svg>`;
+  }
+
+  function passportCard(stats, lvl, _entering) {
+    return `<div class="passport">
+      <div class="glow"></div>
+      <svg class="gridlines" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+        <g fill="none" stroke="#fff" stroke-width=".4">
+          <ellipse cx="50" cy="30" rx="48" ry="20"/><ellipse cx="50" cy="30" rx="30" ry="20"/>
+          <ellipse cx="50" cy="30" rx="12" ry="20"/><line x1="2" y1="30" x2="98" y2="30"/>
+          <line x1="50" y1="10" x2="50" y2="50"/>
+        </g>
+      </svg>
+      <div class="pp-top">
+        <span class="pp-ey">PASSAPORTE DE VIAGEM</span>
+        <span class="pp-streak ${stats.streak.today ? 'on' : ''}">${ic('flame')} ${stats.streak.count}</span>
+      </div>
+      <div class="pp-body">
+        <div>
+          <div class="pp-lvl">${esc(lvl.name)}</div>
+          <div class="pp-pts"><span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span><small>PinPoints</small></div>
+          <div class="pp-next">${lvl.max ? 'Nível máximo alcançado' : `Faltam ${lvl.nextAt - stats.points} para ${esc(lvl.nextName)}`}</div>
+        </div>
+        <div class="pp-ring">${ringSVG(lvl.pct, 64, 6)}<span class="em">${lvl.emoji}</span></div>
+      </div>
+    </div>`;
+  }
+
   // níveis de experiência (PinPoints = pontos do ledger)
   const LEVELS = [
     { name: 'Turista Curioso', at: 0, emoji: '🐣' },
@@ -177,41 +241,59 @@
   // ───────────── home v4 ("PinPoints", Duolingo-style) ─────────────
   let homeCat = 'todos';
   const CATS = [
-    ['todos', '✨ Todas'], ['historico', 'Histórico'], ['cultura', 'Cultura'],
-    ['gastronomia', 'Gastronomia'], ['natureza', 'Natureza'], ['evento', 'Evento'],
+    ['todos', 'Todos'], ['historico', 'Histórico'], ['cultura', 'Cultura'],
+    ['gastronomia', 'Gastronomia'], ['natureza', 'Natureza'], ['evento', 'Eventos'],
   ];
+  const CAT_ICONS = {
+    todos: 'compass', historico: 'landmark', cultura: 'palette',
+    gastronomia: 'utensils', natureza: 'trees', evento: 'calendar-days',
+  };
 
   function conquestCardsHtml(missions) {
     return missions.map((m) => {
       const glow = recentlyUpdated[m.id] && Date.now() - recentlyUpdated[m.id] < 9000 ? 'glow-new' : '';
-      const chip = m.user_status === 'completed' ? '<span class="ccchip done">Concluída ✓</span>'
-        : m.user_status === 'upcoming' ? `<span class="ccchip">Abre ${fmtDate(m.starts_at).slice(0, 5)}</span>`
-        : `<span class="ccchip">${m.progress.completed}/${m.progress.total} locais</span>`;
-      return `<div class="cq-card g-${m.category || 'conquista'} ${glow}" data-mission="${m.id}">
-        <div class="cq-top"><div class="cq-ic">${m.badge}</div>${chip}</div>
-        <div class="cq-name">${esc(m.name)}</div>
-        <div class="cq-desc">${esc(m.description || '')}</div>
-        <span class="cq-pts ${m.user_status === 'completed' ? 'done' : ''}">${m.user_status === 'completed' ? '🏆 Badge conquistado' : '+' + m.bonus_points + ' Pts Extra'}</span>
+      const pct = m.progress.total ? Math.round((m.progress.completed / m.progress.total) * 100) : 0;
+      const sub = m.user_status === 'completed' ? 'Concluída'
+        : m.user_status === 'upcoming' ? 'Abre em ' + fmtDate(m.starts_at)
+        : `${m.progress.completed} de ${m.progress.total} locais`;
+      const chip = m.user_status === 'completed'
+        ? `<span class="t-oc done">✓ badge</span>`
+        : `<span class="t-oc">+${m.bonus_points} pts</span>`;
+      return `<div class="trip-card ${glow}" data-mission="${m.id}">
+        <div class="tile g-${m.category || 'historico'}">
+          ${sceneSVG(m.category || 'historico')}
+          <span class="stamp">${m.badge}</span>
+          ${m.user_status === 'upcoming' ? `<span class="tbadge">${ic('lock')}</span>`
+            : `<span class="ringbadge">${ringSVG(pct, 30, 4)}</span>`}
+          <div class="tile-ov"><div class="tile-bot">
+            <div class="t-ot">${esc(m.name)}</div>
+            <div class="t-mr"><span class="t-os">${sub}</span>${chip}</div>
+          </div></div>
+        </div>
       </div>`;
-    }).join('') || '<p class="muted" style="padding:10px 4px">Nenhuma conquista por aqui.</p>';
+    }).join('') || '<p class="muted">Nenhuma trilha por aqui.</p>';
   }
 
   function placeCardsHtml(places) {
-    return places.map((p) => `
-      <div class="pl-card" data-place="${p.id}">
-        <div class="pl-photo g-${p.category}">
-          <span class="tile-emoji">${p.emoji}</span>
-          <span class="pl-chip cat">${esc(p.category)}</span>
-          <span class="pl-chip dist">${ic('map-pin')} ${fmtDist(p.distance_m)}</span>
+    return places.map((p) => {
+      const chip = p.user_status === 'completed'
+        ? `<span class="t-oc done">✓</span>`
+        : `<span class="t-oc">+${p.base_points} pts</span>`;
+      return `<div class="place-card2" data-place="${p.id}">
+        <div class="tile lg g-${p.category}">
+          ${sceneSVG(p.category)}
+          <span class="stamp">${p.emoji}</span>
+          <div class="tile-ov"><div class="tile-bot">
+            <div class="t-ot">${esc(p.name)}</div>
+            <div class="t-mr">
+              <span class="t-os" style="text-transform:capitalize">${esc(p.category)} · ${fmtDist(p.distance_m)}</span>
+              ${chip}
+            </div>
+          </div></div>
         </div>
-        <div class="pl-body">
-          <div class="pl-name">${esc(p.name)}</div>
-          ${p.user_status === 'completed'
-            ? '<span class="pl-pts done">Visitado ✓</span>'
-            : `<span class="pl-pts">+${p.base_points} Pts</span>`}
-        </div>
-      </div>`).join('') ||
-      `<div class="gps-warn">Os locais de <b>${esc(homeCat)}</b> por aqui fazem parte de missões — confira em 🏆 Trilhas & Conquistas logo acima!</div>`;
+      </div>`;
+    }).join('') ||
+      `<p class="muted">Os locais de ${esc(homeCat)} por aqui fazem parte de trilhas — veja a seção acima.</p>`;
   }
 
   function bindHomeLists(el) {
@@ -229,36 +311,26 @@
     const feed = Backend.getHomeFeed(Sim);
     const places = feed.standalone_places.filter((p) => homeCat === 'todos' || p.category === homeCat);
 
-    el.innerHTML = `
-      <div class="band ${entering ? 'band-in' : ''}">
-        <div class="home-top">
-          <div><span class="eyebrow">${esc(lvl.name)}</span>
-          <div class="hi">Olá, Guilherme</div></div>
-          <div class="home-actions">
-            <div class="streak-pill glass ${stats.streak.today ? 'on' : ''}" title="${stats.streak.today ? 'Ofensiva ativa!' : stats.streak.at_risk ? 'Faça um check-in hoje para manter!' : 'Faça um check-in para começar uma ofensiva'}">${ic('flame')} ${stats.streak.count}</div>
-            <button class="bellbtn glassbtn" data-bell>${ic('bell')}</button>
-          </div>
-        </div>
-        <div class="lvlrow">
-          <div class="lr-top"><b>${lvl.max ? '👑 Nível máximo' : lvl.emoji + ' Rumo a ' + esc(lvl.nextName)}</b>
-            <span><span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span>${lvl.max ? '' : ' / ' + lvl.nextAt} PinPoints</span></div>
-          <div class="bar"><div style="width:${lvl.pct}%"></div></div>
-        </div>
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
+      <div class="big-head">
+        <div><h1>Olá, Guilherme</h1>
+        <p>Pronto para a próxima descoberta?</p></div>
+        <button class="iconbtn" data-bell>${ic('bell')}</button>
       </div>
-      <div class="over ${entering ? 'stagger' : ''}">
-        <div class="chips">${CATS.map(([k, label]) =>
-        `<button class="chip ${homeCat === k ? 'on' : ''}" data-cat="${k}">${label}</button>`).join('')}</div>
-      ${Sim.accuracy > 50 ? '<div class="gps-warn">📡 Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
-      <div class="sec row"><h3>🏆 Trilhas & Conquistas</h3><span class="link" data-see-rank>Ranking</span></div>
+      ${passportCard(stats, lvl, entering)}
+      <div class="catbar">${CATS.map(([k, label]) =>
+        `<button class="cat ${homeCat === k ? 'on' : ''}" data-cat="${k}">${ic(CAT_ICONS[k] || 'compass')}<span>${label}</span></button>`).join('')}</div>
+      ${Sim.accuracy > 50 ? '<div class="gps-warn">Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
+      <div class="sec row"><h3>Suas trilhas</h3><span class="link" data-see-rank>Ranking</span></div>
       <div class="mcarousel" id="home-missions">${conquestCardsHtml(feed.missions)}</div>
-      <div class="sec row"><h3>🧭 Lugares para Explorar</h3><span class="link" data-see-map>Ver no mapa</span></div>
+      <div class="sec row"><h3>Para explorar</h3><span class="link" data-see-map>Ver no mapa</span></div>
       <div id="home-explore">${placeCardsHtml(places)}</div>
     </div>`;
     el.scrollTop = st;
 
     bindHomeLists(el);
     el.querySelector('[data-bell]').onclick = () =>
-      toast('🔔 Tudo em dia! Notificações chegam na v2.', '');
+      toast('Tudo em dia por aqui.', '');
     el.querySelector('[data-see-map]').onclick = () => switchTab('map');
     el.querySelector('[data-see-rank]').onclick = () => switchTab('social');
     el.querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => {
@@ -287,10 +359,10 @@
         <div class="bn">${esc(a.name)}</div>
         <div class="bd">${on ? 'em ' + fmtDate(b.completed_at) : a.progress.completed + '/' + a.progress.total}</div>
       </div>`;
-    }).join('') || '<p class="muted">Nenhuma missão disponível ainda.</p>';
+    }).join('') || '<p class="muted">Nenhuma trilha disponível ainda.</p>';
 
     const flagged = prof.flagged.length ? prof.flagged.map((f) => `
-      <div class="gps-warn">⚠️ Check-in em <b>${esc(f.place)}</b> está em revisão — os pontos podem ser estornados.</div>`).join('') : '';
+      <div class="gps-warn">Check-in em <b>${esc(f.place)}</b> está em revisão — os pontos podem ser estornados.</div>`).join('') : '';
 
     const rows = ledger.map((l) => {
       const up = l.points >= 0;
@@ -304,25 +376,14 @@
       </div>`;
     }).join('') || '<p class="muted">Sem movimentações ainda.</p>';
 
-    el.innerHTML = `
-      <div class="band compact ${entering ? 'band-in' : ''}">
-        <div class="profile-hero">
-          <div class="avatar">🧭</div>
-          <div><div class="nm">Guilherme</div>
-          <div class="rl">${lvl.emoji} ${esc(lvl.name)} · ${stats.points} PinPoints</div></div>
-        </div>
-        <div class="lvlrow">
-          <div class="lr-top"><b>${lvl.max ? '👑 Nível máximo' : 'Rumo a ' + esc(lvl.nextName)}</b>
-            <span><span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span>${lvl.max ? '' : ' / ' + lvl.nextAt} PinPoints</span></div>
-          <div class="bar"><div style="width:${lvl.pct}%"></div></div>
-        </div>
-      </div>
-      <div class="over ${entering ? 'stagger' : ''}">
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
+      <div class="big-head"><div><h1>Perfil</h1><p>Seu passaporte de viagens</p></div></div>
+      ${passportCard(stats, lvl, entering)}
       ${statsRow()}
       <div class="sec"><h3>Conquistas</h3><p>${prof.badges.length} de ${allMissions.length} desbloqueadas</p></div>
       <div class="badges-grid">${badgeCards}</div>
       ${flagged}
-      <div class="sec"><h3>Extrato de pontos</h3><p>Cada linha é uma entrada do ledger — auditável</p></div>
+      <div class="sec"><h3>Atividade</h3><p>Extrato do ledger — auditável</p></div>
       ${rows}
     </div>`;
     el.scrollTop = st;
@@ -350,36 +411,23 @@
 
     let body = '';
     if (socialSeg === 'ranking') {
-      const podium = [soc.ranking[1], soc.ranking[0], soc.ranking[2]]; // 2º · 1º · 3º
-      const cls = ['second', 'first', 'third'];
-      const pod = podium.map((r, i) => r ? `
-        <div class="pcol ${cls[i]}" data-id="${r.id}">
-          ${cls[i] === 'first' ? '<span class="crown">👑</span>' : ''}
-          ${avatar(r, cls[i] === 'first' ? 'lg' : 'md')}
-          <span class="pn">${r.you ? 'Você' : esc(r.name.split(' ')[0])}</span>
-          ${r.you ? '<span class="you-tag">VOCÊ</span>' : ''}
-          <span class="pp">${r.points} pts</span>
-          <div class="base">${r.rank}</div>
-        </div>` : '<div class="pcol"></div>').join('');
-      const rows = soc.ranking.slice(3).map((r) => `
+      const medal = ['🥇', '🥈', '🥉'];
+      body = soc.ranking.map((r) => `
         <div class="rank-row ${r.you ? 'me' : ''}" data-id="${r.id}">
-          <span class="pos">${r.rank}</span>
+          <span class="pos">${r.rank <= 3 ? medal[r.rank - 1] : r.rank}</span>
           ${avatar(r, 'sm')}
           <div class="info"><div class="nm">${r.you ? 'Você' : esc(r.name)}</div>
             <div class="lv">${esc(levelInfo(r.points).name)}</div></div>
           <span class="pts">${r.points} pts</span>
-        </div>`).join('');
-      body = `
-        <div class="podium">${pod}</div>
-        ${rows}
-        <div class="gps-warn">💡 O ranking usa seus pontos reais, ao vivo — faça um check-in e veja você subir na hora.</div>`;
+        </div>`).join('') +
+        '<p class="muted" style="margin-top:16px;font-size:13px">O ranking usa seus pontos reais — faça um check-in e suba ao vivo.</p>';
     } else {
       const reqs = soc.requests.map((p) => `
         <div class="req-row" data-id="${p.id}">
           ${avatar(p, 'sm')}
           <div class="info"><div class="nm">${esc(p.name)}</div>
             <div class="mt">${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
-          <button class="btn-round no" data-decline="${p.id}">${ic('x')}</button>
+          <button class="btn-round" data-decline="${p.id}">${ic('x')}</button>
           <button class="btn-round ok" data-accept="${p.id}">${ic('check')}</button>
         </div>`).join('');
       const friends = soc.friends.map((p) => `
@@ -388,7 +436,7 @@
           <div class="info"><div class="nm">${esc(p.name)}</div>
             <div class="mt">${esc(levelInfo(p.points).name)} · ${p.mutual} em comum</div></div>
           <button class="btn-round chat" data-chat="${p.id}">${ic('message-circle')}</button>
-        </div>`).join('') || '<p class="muted">Aceite pedidos ou adicione pessoas para montar sua tripulação.</p>';
+        </div>`).join('') || '<p class="muted">Aceite pedidos ou adicione pessoas.</p>';
       const sugs = soc.suggestions.map((p) => `
         <div class="friend-row" data-id="${p.id}">
           ${avatar(p, 'sm')}
@@ -400,23 +448,17 @@
         </div>`).join('') || '<p class="muted">Sem sugestões no momento.</p>';
 
       body = `
-        ${soc.requests.length ? `<div class="sec" style="margin-top:4px"><h3>Pedidos pendentes<span class="count-pill">${soc.requests.length}</span></h3><p>Pessoas que querem viajar com você</p></div>${reqs}` : ''}
-        <div class="sec"><h3>Amigos · ${soc.friends.length}</h3><p>Sua tripulação de exploração</p></div>
+        ${soc.requests.length ? `<div class="sec" style="margin-top:6px"><h3 style="font-size:17px">Pedidos pendentes</h3><p>Pessoas que querem viajar com você</p></div>${reqs}` : ''}
+        <div class="sec"><h3 style="font-size:17px">Amigos · ${soc.friends.length}</h3></div>
         ${friends}
-        <div class="sec"><h3>Adicionar pessoas</h3><p>Sugestões com amigos em comum</p></div>
+        <div class="sec"><h3 style="font-size:17px">Adicionar pessoas</h3><p>Sugestões com amigos em comum</p></div>
         ${sugs}`;
     }
 
-    el.innerHTML = `
-      <div class="band compact ${entering ? 'band-in' : ''}">
-        <div class="app-head">
-          <div class="greet">Social<small>Compita e explore junto</small></div>
-          <span class="level-pill">#${soc.my_rank} no ranking</span>
-        </div>
-      </div>
-      <div class="over ${entering ? 'stagger' : ''}">
-      <div class="seg">
-        <button class="${socialSeg === 'ranking' ? 'on' : ''}" data-seg="ranking">🏆 Ranking</button>
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
+      <div class="big-head"><div><h1>Social</h1><p>#${soc.my_rank} no ranking entre amigos</p></div></div>
+      <div class="tabs2">
+        <button class="${socialSeg === 'ranking' ? 'on' : ''}" data-seg="ranking">Ranking</button>
         <button class="${socialSeg === 'friends' ? 'on' : ''}" data-seg="friends">Amigos${soc.requests.length ? `<span class="count-pill">${soc.requests.length}</span>` : ''}</button>
       </div>
       ${body}
@@ -445,7 +487,7 @@
     el.querySelectorAll('[data-accept]').forEach((b) => b.onclick = () => {
       const p = Backend.acceptRequest(b.dataset.accept);
       buzz(20);
-      toast(`🎉 ${esc(p.name)} agora faz parte da sua tripulação — entrou no ranking!`, 'ok');
+      toast(`${esc(p.name)} agora faz parte da sua tripulação — entrou no ranking.`, 'ok');
     });
     el.querySelectorAll('[data-decline]').forEach((b) => b.onclick = () => {
       Backend.declineRequest(b.dataset.decline);
@@ -454,10 +496,10 @@
     el.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
       const p = Backend.sendRequest(b.dataset.add);
       buzz(15);
-      toast(`✈️ Pedido enviado para ${esc(p.name)}`, 'ok');
+      toast(`Pedido enviado para ${esc(p.name)}`, 'ok');
     });
     el.querySelectorAll('[data-chat]').forEach((b) => b.onclick = () =>
-      toast('💬 Chat entre amigos chega na v2', ''));
+      toast('Chat entre amigos chega na v2', ''));
   }
 
   // ───────────── feed social ─────────────
@@ -475,22 +517,19 @@
         </div>
         <p class="ptext">${esc(p.text)}</p>
         ${p.attachment ? `<div class="postcard g-${p.attachment.category}">
-          <span class="tile-emoji pc">${p.attachment.emoji}</span>
+          <span class="pc">${p.attachment.emoji}</span>
           <span class="pc-label">${esc(p.attachment.label)}</span>
         </div>` : ''}
         <div class="pact">
           <button class="plike ${p.liked ? 'on' : ''}" data-like="${p.id}">${ic('heart')} ${p.likes}</button>
           <button class="pcmt" data-cmt>${ic('message-circle')} ${p.comments}</button>
         </div>
-      </div>`).join('') || '<p class="muted">Faça um check-in para inaugurar o feed! 📍</p>';
+      </div>`).join('') || '<p class="muted">Faça um check-in para inaugurar o feed.</p>';
 
-    el.innerHTML = `
-      <div class="band compact ${entering ? 'band-in' : ''}">
-        <span class="eyebrow chip">Comunidade</span>
-        <div class="hi" style="margin-top:10px">Feed Social</div>
-        <div class="hi-sub">O que sua tripulação anda explorando</div>
-      </div>
-      <div class="over ${entering ? 'stagger' : ''}">${posts}</div>`;
+    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
+      <div class="big-head"><div><h1>Feed</h1><p>O que sua tripulação anda explorando</p></div></div>
+      <div class="feedlist">${posts}</div>
+    </div>`;
     el.scrollTop = st;
 
     el.querySelectorAll('[data-like]').forEach((b) => b.onclick = () => {
@@ -498,7 +537,7 @@
       Backend.toggleLike(b.dataset.like);
     });
     el.querySelectorAll('[data-cmt]').forEach((b) => b.onclick = () =>
-      toast('💬 Comentários chegam na v2', ''));
+      toast('Comentários chegam na v2', ''));
   }
 
   // ───────────── mapa ─────────────
@@ -528,21 +567,16 @@
     markersLayer.clearLayers();
     let pins = Backend.getMapPins();
     if (mapFilter === 'missions') pins = pins.filter((p) => p.kind === 'mission');
-    const RING = { historico: '#E1953B', cultura: '#9D5CE6', gastronomia: '#EB5F33', natureza: '#4FA055', evento: '#4E7FE0' };
     pins.forEach((pin, i) => {
       const cls = pin.user_status === 'completed' ? 'done'
-        : pin.user_status === 'locked' ? 'locked' : pin.kind;
-      const mini = pin.user_status === 'completed' ? '<span class="mini">✓</span>'
-        : pin.user_status === 'locked' ? '<span class="mini">🔒</span>'
-        : pin.kind === 'mission' ? '<span class="mini">★</span>' : '';
-      // cor do anel = categoria (estados done/locked sobrescrevem via classe)
-      const ring = pin.user_status === 'completed' || pin.user_status === 'locked'
-        ? '' : (RING[pin.category] || '#F28220');
-      const drop = animatePins ? `drop" style="animation-delay:${i * 45}ms` : '';
+        : pin.user_status === 'locked' ? 'locked' : '';
+      const label = pin.user_status === 'completed' ? '✓'
+        : pin.user_status === 'locked' ? '🔒' : '+' + pin.base_points;
+      const drop = animatePins ? ` style="animation-delay:${i * 40}ms"` : '';
       const icon = L.divIcon({
         className: '',
-        html: `<div class="pin2 ${cls} ${drop}"><div class="c"${ring ? ` style="border-color:${ring}"` : ''}>${pin.emoji}</div><div class="tip"${ring ? ` style="background:${ring}"` : ''}></div>${mini}</div>`,
-        iconSize: [44, 52], iconAnchor: [22, 50],
+        html: `<div class="pinpill ${cls} ${animatePins ? 'drop' : ''}"${drop}>${pin.emoji} ${label}</div>`,
+        iconSize: [72, 30], iconAnchor: [36, 15],
       });
       L.marker([pin.lat, pin.lng], { icon })
         .on('click', () => openSheet(pin.id))
@@ -558,8 +592,8 @@
       const p = Backend.getPlaceDetail(sheetState.id, Sim);
       if (p) {
         focusCircle = L.circle([p.lat, p.lng], {
-          radius: p.radius_m, color: '#2D7FE0', weight: 2,
-          fillColor: '#2D7FE0', fillOpacity: 0.1, dashArray: '6 6',
+          radius: p.radius_m, color: '#E0541A', weight: 2,
+          fillColor: '#E0541A', fillOpacity: 0.1, dashArray: '6 6',
         }).addTo(map);
       }
     }
@@ -643,75 +677,79 @@
     const d = Backend.getPlaceDetail(sheetState.id, Sim);
     if (!d) { closeSheet(); return; }
 
-    const missionsCtx = d.missions.map((m) => `
-      <div class="mission-ctx" data-mission="${m.id}">${m.badge} <b>${esc(m.name)}</b>
-        ${m.window === 'upcoming' ? '· abre em ' + fmtDate(m.starts_at) : `— ${m.progress.completed}/${m.progress.total}`}
-        <span class="chev">›</span>
-      </div>`).join('');
+    const dist = d.distance_m;
+    const ready = d.user_status === 'available' && validating !== d.id && inRange(d.id, dist, d.radius_m);
 
-    let action = '';
+    const missionsCtx = d.missions.length ? `<div class="mission-pills">
+      <span class="mpill-ey">Faz parte de</span>
+      ${d.missions.map((m) => `<div class="mission-pill" data-mission="${m.id}">
+        <span class="mp-ico">${m.badge}</span>
+        <div class="mp-d"><div class="mp-name">${esc(m.name)}</div>
+          <div class="mp-prog">${m.window === 'upcoming' ? 'Abre em ' + fmtDate(m.starts_at) : m.progress.completed + '/' + m.progress.total + ' locais'}</div></div>
+        <span class="mp-chev">›</span>
+      </div>`).join('')}
+    </div>` : '';
+
+    let bar = '';
+    let force = '';
     if (d.user_status === 'completed') {
-      const flaggedNote = d.checkin && d.checkin.status === 'flagged' ? ' · ⚠️ em revisão' : '';
-      action = `<button class="btn-checkin done" disabled>✓ Visitado em ${fmtDate(d.checkin && d.checkin.created_at)} · +${d.checkin ? d.checkin.points_awarded : d.base_points} pts${flaggedNote}</button>`;
+      const flaggedNote = d.checkin && d.checkin.status === 'flagged' ? ' · em revisão' : '';
+      bar = `<div class="bar-status done">${ic('check')} Visitado em ${fmtDate(d.checkin && d.checkin.created_at)} · +${d.checkin ? d.checkin.points_awarded : d.base_points} pts${flaggedNote}</div>`;
     } else if (d.user_status === 'locked') {
       const up = d.missions.find((m) => m.window === 'upcoming');
-      action = `<button class="btn-checkin locked" disabled>🔒 ${up ? 'Disponível a partir de ' + fmtDate(up.starts_at) : 'Indisponível'}</button>
-        <button class="force-link" data-force>🧪 testar mesmo assim (o servidor valida)</button>`;
+      bar = `<div class="bar-status">${ic('lock')} ${up ? 'Disponível a partir de ' + fmtDate(up.starts_at) : 'Indisponível no momento'}</div>`;
+      force = '<button class="force-link" data-force>Testar mesmo assim — o servidor valida</button>';
     } else if (validating === d.id) {
-      action = '<button class="btn-checkin" disabled><span class="spinner"></span>Confirmando sua presença…</button>';
+      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> pts</b><span>validando…</span></div>
+        <button class="btn-cta" disabled><span class="spinner"></span>Confirmando…</button>`;
+    } else if (ready) {
+      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> pts</b><span>você está no raio</span></div>
+        <button class="btn-cta ready" data-checkin>Fazer check-in</button>`;
     } else {
-      const dist = d.distance_m;
-      const ready = inRange(d.id, dist, d.radius_m);
-      if (ready) {
-        action = `<button class="btn-checkin ready" data-checkin>Fazer check-in agora · +${d.base_points} pts</button>`;
-      } else {
-        action = `<button class="btn-checkin" disabled>Você está a ${fmtDist(dist)} — chegue mais perto</button>
-          <button class="btn-secondary" data-route>${ic('navigation')} Como chegar</button>
-          <button class="force-link" data-force>🧪 testar mesmo assim (o servidor valida)</button>`;
-      }
+      bar = `<div class="bar-pts"><b><em>+${d.base_points}</em> pts</b><span>a ${fmtDist(dist)} de você</span></div>
+        <button class="btn-cta" disabled>Chegue mais perto</button>`;
+      force = '<button class="force-link" data-force>Testar mesmo assim — o servidor valida</button>';
     }
 
     el.innerHTML = `
-      <div class="hero g-${d.category}">
-        <span class="tile-emoji">${d.emoji}</span>
-        <div class="hero-shade"></div>
-        <button class="hbtn l" data-close>${ic('arrow-left')}</button>
-        <button class="hbtn r" data-fav>${ic('bookmark')}</button>
-        <div class="hero-info">
-          ${sheetState.from ? `<span class="hcrumb" data-back>${ic('trophy')} parte de uma missão — voltar</span>` : ''}
-          <div class="ht">${esc(d.name)}</div>
-          <div class="hrow">
-            <span class="haddr">${ic('map-pin')} ${esc(d.address)}</span>
-            <span class="hpts">+${d.base_points} Pts</span>
-          </div>
+      <div class="hero2 g-${d.category}">
+        ${sceneSVG(d.category)}
+        <div class="h2shade"></div>
+        <button class="hbtn2 l" data-close>${ic('arrow-left')}</button>
+        <button class="hbtn2 r" data-fav>${ic('bookmark')}</button>
+        <div class="h2info">
+          <div class="h2t">${esc(d.name)}</div>
+          <div class="h2s">${esc(d.category)} · ${esc(d.address)}</div>
         </div>
       </div>
-      <div class="page-body">
-        <div class="spills">
-          <span class="spill">${ic('footprints')} ${fmtDist(d.distance_m)}</span>
-          <span class="spill">${ic('target')} raio ${d.radius_m} m</span>
-          <span class="spill">${ic('tag')} ${esc(d.category)}</span>
+      <div class="page-body2">
+        ${sheetState.from ? '<span class="crumb" data-back>‹ Voltar para a trilha</span>' : ''}
+        <div class="stat-chips">
+          <span class="schip">${ic('footprints')} ${fmtDist(dist)}</span>
+          <span class="schip">${ic('target')} raio ${d.radius_m} m</span>
+          ${d.user_status === 'completed' ? `<span class="schip g">${ic('check')} Visitado</span>` : `<span class="schip a">${ic('star')} +${d.base_points} pts</span>`}
         </div>
+        ${d.user_status !== 'completed' ? `<div class="dt-actions"><button class="action-chip" data-route>${ic('navigation')} Como chegar</button></div>` : ''}
         ${missionsCtx}
-        <p class="desc">${esc(d.description)}</p>
-        ${Sim.accuracy > 50 && d.user_status === 'available' ? '<div class="gps-warn">📡 GPS impreciso (' + Sim.accuracy + ' m) — o servidor tolera até raio + 50 m.</div>' : ''}
-        ${action}
-      </div>`;
+        <p class="dt-desc">${esc(d.description)}</p>
+        ${Sim.accuracy > 50 && d.user_status === 'available' ? '<div class="gps-warn">Sinal de GPS impreciso (' + Sim.accuracy + ' m) — o servidor tolera até raio + 50 m.</div>' : ''}
+        ${force}
+      </div>
+      <div class="cta-bar">${bar}</div>`;
 
     el.querySelector('[data-close]').onclick = closeSheet;
     const back = el.querySelector('[data-back]');
     if (back) back.onclick = () => openMissionDetail(sheetState.from);
     const fav = el.querySelector('[data-fav]');
-    if (fav) fav.onclick = () => toast('🔖 Favoritos chegam na v2', '');
-    el.querySelectorAll('.mission-ctx').forEach((m) =>
+    if (fav) fav.onclick = () => toast('Favoritos chegam na v2', '');
+    el.querySelectorAll('[data-mission]').forEach((m) =>
       m.addEventListener('click', () => openMissionDetail(m.dataset.mission)));
     const btn = el.querySelector('[data-checkin]');
     if (btn) btn.onclick = () => doCheckin(d.id);
-    const force = el.querySelector('[data-force]');
-    if (force) force.onclick = () => doCheckin(d.id);
+    const forceBtn = el.querySelector('[data-force]');
+    if (forceBtn) forceBtn.onclick = () => doCheckin(d.id);
     const route = el.querySelector('[data-route]');
-    if (route) route.onclick = () =>
-      toast('🧭 No app real: deep link para Google Maps / Waze.', '');
+    if (route) route.onclick = () => toast('No app real: deep link para Google Maps / Waze.', '');
   }
 
   function renderMissionSheet(el) {
@@ -720,35 +758,43 @@
     const pct = d.progress.total ? Math.round((d.progress.completed / d.progress.total) * 100) : 0;
 
     const rows = d.places.map((p) => {
-      const over = p.user_status === 'completed' ? '<span class="tover ok">✓</span>'
-        : p.user_status === 'locked' ? '<span class="tover lk">🔒</span>' : '';
-      return `<div class="mission-place-row" data-place="${p.id}">
-        <div class="p-thumb mini g-${p.category || 'historico'}"><span class="pe">${p.emoji}</span>${over}</div>
-        <span class="nm">${esc(p.name)}</span>
-        <span class="ds">${p.user_status === 'completed' ? '+' + p.base_points + ' Pts' : fmtDist(p.distance_m)}</span>
-        <span class="chev">›</span>
+      const done = p.user_status === 'completed';
+      const locked = p.user_status === 'locked';
+      return `<div class="mpr ${done ? 'done' : ''}" data-place="${p.id}">
+        <div class="mpr-t g-${p.category || 'historico'}">
+          ${sceneSVG(p.category || 'historico')}
+          <span class="mpr-em">${p.emoji}</span>
+          ${done ? `<div class="mpr-chk">${ic('check')}</div>` : locked ? `<div class="mpr-lk">🔒</div>` : ''}
+        </div>
+        <div class="mpr-i">
+          <div class="mpr-n">${esc(p.name)}</div>
+          <div class="mpr-m">${done ? '✓ +' + p.base_points + ' pts' : fmtDist(p.distance_m)}</div>
+        </div>
+        <div class="mpr-r">${done ? '<span class="mpr-badge">✓</span>' : '<span class="mpr-chev">›</span>'}</div>
       </div>`;
     }).join('');
 
     el.innerHTML = `
-      <div class="hero g-conquista">
-        <span class="tile-emoji">${d.badge}</span>
-        <div class="hero-shade"></div>
-        <button class="hbtn l" data-close>${ic('arrow-left')}</button>
-        <div class="hero-info">
-          <span class="hcrumb">${d.badge} Missão${d.window === 'upcoming' ? ' · em breve' : ''}</span>
-          <div class="ht">${esc(d.name)}</div>
-          <div class="hrow">
-            <span class="haddr">${d.window === 'upcoming' ? '🔒 Abre em ' + fmtDate(d.starts_at) : d.progress.completed + '/' + d.progress.total + ' check-ins · ' + pct + '%'}</span>
-            <span class="hpts">+${d.bonus_points} pts</span>
-          </div>
-          <div class="ph-bar"><div style="width:${pct}%"></div></div>
+      <div class="hero2 g-${d.category || 'conquista'}">
+        ${sceneSVG(d.category || 'conquista')}
+        <div class="h2shade"></div>
+        <button class="hbtn2 l" data-close>${ic('arrow-left')}</button>
+        <div class="h2info">
+          <div class="h2t">${esc(d.name)}</div>
+          <div class="h2s" style="text-transform:none">+${d.bonus_points} pts de bônus ao completar</div>
         </div>
       </div>
-      <div class="page-body">
+      <div class="page-body2" style="padding-bottom:30px">
         ${d.unlocked ? `<div class="unlocked-banner">${ic('trophy')} Concluída em ${fmtDate(d.unlockedAt)} · +${d.bonus_points} pts creditados</div>` : ''}
-        <p class="desc" style="margin-top:0">${esc(d.description)}</p>
-        <div class="sec row" style="margin-top:10px"><h3>Roteiro</h3><span class="muted">${d.places.length} locais</span></div>
+        <div class="mprogblock">
+          <div class="mpb-row">
+            <span class="mpb-frac">${d.progress.completed} de ${d.progress.total} locais visitados</span>
+            <span class="mpb-pct">${pct}%</span>
+          </div>
+          <div class="mpb-bar"><div class="mpb-fill" style="width:${pct}%"></div></div>
+        </div>
+        <p class="dt-desc">${esc(d.description)}</p>
+        <div class="sec row" style="margin:22px 0 8px"><h3 style="font-size:18px">Roteiro</h3><span class="muted">${d.places.length} locais</span></div>
         ${rows}
       </div>`;
 
