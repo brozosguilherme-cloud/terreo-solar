@@ -20,7 +20,7 @@
       <tr>
         <td>${p.emoji} <b>${esc(p.name)}</b><br><span class="muted" style="font-size:11.5px">${esc(p.city || '')}</span></td>
         <td>${statusChip(p.status)}</td>
-        <td>${p.base_points} pts</td>
+        <td>${p.base_points} PinPoints</td>
         <td>${p.radius_m} m</td>
         <td>${p.visibility === 'mission_only' ? '🔒 só missão' : '🌎 sempre'}</td>
         <td>${p.missions.length ? p.missions.map((m) => esc(m.name)).join('<br>') : '<span class="muted">— avulso</span>'}</td>
@@ -204,7 +204,7 @@
           <b>${esc(a.name)}</b> ${statusChip(a.status)}
           ${a.window === 'upcoming' ? '<span class="statuschip chip-soon">abre ' + fmtDate(a.starts_at) + '</span>' : ''}
           ${a.window === 'expired' ? '<span class="statuschip chip-soon">expirada</span>' : ''}
-          <div class="meta">${a.places.length} locais · bônus ${a.bonus_points} pts ·
+          <div class="meta">${a.places.length} locais · bônus ${a.bonus_points} PinPoints ·
             seu progresso: ${a.progress.completed}/${a.progress.total} ${a.unlocked ? '🏆' : ''}</div>
         </div>
         <div class="actions">
@@ -323,7 +323,7 @@
         body = `
           <ul class="checklist">${checks.map((c) => `<li class="${c.ok ? 'ok' : 'bad'}">${c.label}</li>`).join('')}</ul>
           ${drafts.length ? `<button class="btn-outline" data-pub-drafts>📤 Publicar ${drafts.length} local(is) em rascunho</button>` : ''}
-          <div class="infobox">Σ pontos da missão: <b>${sum} pts</b> nos check-ins + <b>${state.info.bonus_points} pts</b> de bônus = <b>${sum + Number(state.info.bonus_points)} pts</b> possíveis.</div>`;
+          <div class="infobox">Σ PinPoints da missão: <b>${sum} PinPoints</b> nos check-ins + <b>${state.info.bonus_points} PinPoints</b> de bônus = <b>${sum + Number(state.info.bonus_points)} PinPoints</b> possíveis.</div>`;
       }
 
       wiz().innerHTML = `
@@ -427,7 +427,7 @@
           <span class="fact">📡 precisão: ${c.accuracy_m != null ? c.accuracy_m + ' m' : '—'}</span>
           ${c.speed_kmh != null ? `<span class="fact">🚀 velocidade desde o último check-in: ${c.speed_kmh} km/h</span>` : ''}
           ${c.is_mock_location ? '<span class="fact" style="background:#fee2e2;color:#b91c1c">🎭 mock location detectado</span>' : ''}
-          <span class="fact">⭐ ${c.points_awarded} pts concedidos (revogáveis)</span>
+          <span class="fact">⭐ ${c.points_awarded} PinPoints concedidos (revogáveis)</span>
         </div>
         <div class="actions">
           <button class="btn-outline" data-approve="${c.id}">✓ Aprovar (legítimo)</button>
@@ -449,7 +449,7 @@
     el.querySelectorAll('[data-revoke]').forEach((b) => b.onclick = async () => {
       if (!await confirmModal('Revogar check-in', 'Os pontos serão estornados no ledger. Se uma conquista dependia deste check-in, ela também será revogada (fraude não tem grandfathering).', 'Revogar')) return;
       const res = Backend.adminRevokeCheckin(b.dataset.revoke);
-      toast(`↩️ ${res.reversed_points} pts estornados${res.revoked_achievements.length ? ' · conquistas revogadas: ' + res.revoked_achievements.join(', ') : ''}`, 'warn');
+      toast(`↩️ ${res.reversed_points} PinPoints estornados${res.revoked_achievements.length ? ' · conquistas revogadas: ' + res.revoked_achievements.join(', ') : ''}`, 'warn');
     });
   }
 
