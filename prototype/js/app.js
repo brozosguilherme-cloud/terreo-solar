@@ -44,28 +44,23 @@
     </svg>`;
   }
 
-  function passportCard(stats, lvl, _entering) {
-    return `<div class="passport">
-      <div class="glow"></div>
-      <svg class="gridlines" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
-        <g fill="none" stroke="#fff" stroke-width=".4">
-          <ellipse cx="50" cy="30" rx="48" ry="20"/><ellipse cx="50" cy="30" rx="30" ry="20"/>
-          <ellipse cx="50" cy="30" rx="12" ry="20"/><line x1="2" y1="30" x2="98" y2="30"/>
-          <line x1="50" y1="10" x2="50" y2="50"/>
-        </g>
-      </svg>
-      <div class="pp-top">
-        <span class="pp-ey">PASSAPORTE DE VIAGEM</span>
-        <span class="pp-streak ${stats.streak.today ? 'on' : ''}">${ic('flame')} ${stats.streak.count}</span>
-      </div>
-      <div class="pp-body">
-        <div>
-          <div class="pp-lvl">${esc(lvl.name)}</div>
-          <div class="pp-pts"><span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span><small>PinPoints</small></div>
-          <div class="pp-next">${lvl.max ? 'Nível máximo alcançado' : `Faltam ${lvl.nextAt - stats.points} para ${esc(lvl.nextName)}`}</div>
+  function levelCard(stats, lvl) {
+    const ptsLabel = lvl.max
+      ? `Nível máximo — <span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> PinPoints`
+      : `<span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> / ${lvl.nextAt} PinPoints para o próximo`;
+    const streakLabel = stats.streak.today
+      ? `<span class="lc-streak on">${ic('flame')} ${stats.streak.count} dias</span>`
+      : (stats.streak.count ? `<span class="lc-streak">${ic('flame')} ${stats.streak.count}</span>` : '');
+    return `<div class="lvl-card">
+      <div class="lc-row">
+        <div class="lc-icon">${lvl.emoji}</div>
+        <div class="lc-body">
+          <div class="lc-name">${esc(lvl.name)}</div>
+          <div class="lc-pts">${ptsLabel}</div>
         </div>
-        <div class="pp-ring">${ringSVG(lvl.pct, 64, 6)}<span class="em">${lvl.emoji}</span></div>
+        ${streakLabel}<div class="lc-trophy">${ic('trophy')}</div>
       </div>
+      <div class="lc-bar"><div style="width:${lvl.pct}%"></div></div>
     </div>`;
   }
 
@@ -252,48 +247,52 @@
   function conquestCardsHtml(missions) {
     return missions.map((m) => {
       const glow = recentlyUpdated[m.id] && Date.now() - recentlyUpdated[m.id] < 9000 ? 'glow-new' : '';
-      const pct = m.progress.total ? Math.round((m.progress.completed / m.progress.total) * 100) : 0;
-      const sub = m.user_status === 'completed' ? 'Concluída'
-        : m.user_status === 'upcoming' ? 'Abre em ' + fmtDate(m.starts_at)
-        : `${m.progress.completed} de ${m.progress.total} locais`;
-      const chip = m.user_status === 'completed'
-        ? `<span class="t-oc done">✓ badge</span>`
-        : `<span class="t-oc">+${m.bonus_points} pts</span>`;
-      return `<div class="trip-card ${glow}" data-mission="${m.id}">
-        <div class="tile g-${m.category || 'historico'}">
-          ${sceneSVG(m.category || 'historico')}
-          <span class="stamp">${m.badge}</span>
-          ${m.user_status === 'upcoming' ? `<span class="tbadge">${ic('lock')}</span>`
-            : `<span class="ringbadge">${ringSVG(pct, 30, 4)}</span>`}
-          <div class="tile-ov"><div class="tile-bot">
-            <div class="t-ot">${esc(m.name)}</div>
-            <div class="t-mr"><span class="t-os">${sub}</span>${chip}</div>
-          </div></div>
+      const locStr = m.user_status === 'completed' ? '✓ CONCLUÍDA'
+        : m.user_status === 'upcoming' ? 'EM BREVE'
+        : `${m.progress.completed}/${m.progress.total} LOCAIS`;
+      const sub = m.user_status === 'upcoming' ? 'Abre em ' + fmtDate(m.starts_at)
+        : m.user_status === 'completed' ? 'Badge desbloqueado na coleção'
+        : (m.description || 'Explore os locais desta missão.');
+      const bonusCls = m.user_status === 'completed' ? 'mc-bonus done' : 'mc-bonus';
+      const bonusTxt = m.user_status === 'completed'
+        ? `✓ +${m.bonus_points} PinPoints`
+        : `+${m.bonus_points} PinPoints Extra`;
+      return `<div class="mcard ${glow}" data-mission="${m.id}">
+        <div class="mc-head">
+          <div class="mc-icon">${m.badge}</div>
+          <span class="mc-prog">${locStr}</span>
         </div>
+        <div class="mc-title">${esc(m.name)}</div>
+        <div class="mc-sub">${esc(sub)}</div>
+        <span class="${bonusCls}">${bonusTxt}</span>
       </div>`;
     }).join('') || '<p class="muted">Nenhuma trilha por aqui.</p>';
   }
 
   function placeCardsHtml(places) {
     return places.map((p) => {
-      const chip = p.user_status === 'completed'
-        ? `<span class="t-oc done">✓</span>`
-        : `<span class="t-oc">+${p.base_points} pts</span>`;
-      return `<div class="place-card2" data-place="${p.id}">
-        <div class="tile lg g-${p.category}">
+      const visited = p.user_status === 'completed';
+      return `<div class="pcard" data-place="${p.id}">
+        <div class="pc-photo g-${p.category}">
           ${sceneSVG(p.category)}
-          <span class="stamp">${p.emoji}</span>
-          <div class="tile-ov"><div class="tile-bot">
-            <div class="t-ot">${esc(p.name)}</div>
-            <div class="t-mr">
-              <span class="t-os" style="text-transform:capitalize">${esc(p.category)} · ${fmtDist(p.distance_m)}</span>
-              ${chip}
-            </div>
-          </div></div>
+          <span class="pc-em">${p.emoji}</span>
         </div>
+        <div class="pc-body">
+          <div class="pc-chips">
+            <span class="pc-cat">${esc(p.category).toUpperCase()}</span>
+            <span class="pc-sep">·</span>
+            <span class="pc-dist">${ic('map-pin')} ${fmtDist(p.distance_m)}</span>
+          </div>
+          <div class="pc-name">${esc(p.name)}</div>
+          <div class="pc-desc">${esc(p.description || '')}</div>
+        </div>
+        ${visited
+          ? `<span class="pc-vist">${ic('check')}</span>`
+          : `<span class="pc-pts-badge">+${p.base_points}</span>`}
+        <span class="pc-chev">›</span>
       </div>`;
     }).join('') ||
-      `<p class="muted">Os locais de ${esc(homeCat)} por aqui fazem parte de trilhas — veja a seção acima.</p>`;
+      `<p class="muted">Nenhum local avulso — explore as trilhas acima.</p>`;
   }
 
   function bindHomeLists(el) {
@@ -313,17 +312,19 @@
 
     el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
       <div class="big-head">
-        <div><h1>Olá, Guilherme</h1>
-        <p>Pronto para a próxima descoberta?</p></div>
-        <button class="iconbtn" data-bell>${ic('bell')}</button>
+        <div>
+          <div class="eyebrow-head">EXPLORADOR GLOBAL</div>
+          <h1>Olá, Guilherme</h1>
+        </div>
+        <button class="notif-btn" data-bell>${ic('bell')}</button>
       </div>
-      ${passportCard(stats, lvl, entering)}
-      <div class="catbar">${CATS.map(([k, label]) =>
-        `<button class="cat ${homeCat === k ? 'on' : ''}" data-cat="${k}">${ic(CAT_ICONS[k] || 'compass')}<span>${label}</span></button>`).join('')}</div>
+      ${levelCard(stats, lvl)}
+      <div class="hfilter">${CATS.map(([k, label]) =>
+        `<button class="hchip ${homeCat === k ? 'on' : ''}" data-cat="${k}">${label}</button>`).join('')}</div>
       ${Sim.accuracy > 50 ? '<div class="gps-warn">Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
-      <div class="sec row"><h3>Suas trilhas</h3><span class="link" data-see-rank>Ranking</span></div>
+      <div class="sec-h">${ic('trophy')}<h3>Trilhas &amp; Conquistas</h3><span class="sec-link" data-see-rank>Ranking</span></div>
       <div class="mcarousel" id="home-missions">${conquestCardsHtml(feed.missions)}</div>
-      <div class="sec row"><h3>Para explorar</h3><span class="link" data-see-map>Ver no mapa</span></div>
+      <div class="sec-h">${ic('map-pin')}<h3>Missões Próximas a você</h3><span class="sec-link" data-see-map>Ver mapa</span></div>
       <div id="home-explore">${placeCardsHtml(places)}</div>
     </div>`;
     el.scrollTop = st;
@@ -331,8 +332,10 @@
     bindHomeLists(el);
     el.querySelector('[data-bell]').onclick = () =>
       toast('Tudo em dia por aqui.', '');
-    el.querySelector('[data-see-map]').onclick = () => switchTab('map');
-    el.querySelector('[data-see-rank]').onclick = () => switchTab('social');
+    const seeMap = el.querySelector('[data-see-map]');
+    const seeRank = el.querySelector('[data-see-rank]');
+    if (seeMap) seeMap.onclick = () => switchTab('map');
+    if (seeRank) seeRank.onclick = () => switchTab('social');
     el.querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => {
       homeCat = b.dataset.cat;
       buzz(8);
@@ -377,8 +380,8 @@
     }).join('') || '<p class="muted">Sem movimentações ainda.</p>';
 
     el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="big-head"><div><h1>Perfil</h1><p>Seu passaporte de viagens</p></div></div>
-      ${passportCard(stats, lvl, entering)}
+      <div class="big-head"><div><div class="eyebrow-head">SEU PROGRESSO</div><h1>Perfil</h1></div></div>
+      ${levelCard(stats, lvl)}
       ${statsRow()}
       <div class="sec"><h3>Conquistas</h3><p>${prof.badges.length} de ${allMissions.length} desbloqueadas</p></div>
       <div class="badges-grid">${badgeCards}</div>
@@ -412,15 +415,37 @@
     let body = '';
     if (socialSeg === 'ranking') {
       const medal = ['🥇', '🥈', '🥉'];
-      body = soc.ranking.map((r) => `
+      const top3 = soc.ranking.slice(0, 3);
+      const rest = soc.ranking.slice(3);
+      const podium = top3.length >= 2 ? `<div class="podium">
+        ${top3[1] ? `<div class="pod-col">
+          <div class="pod-avt">${avatar(top3[1], 'md')}</div>
+          <div class="pod-name">${esc(top3[1].name.split(' ')[0])}</div>
+          <div class="pod-pts">${top3[1].points} pts</div>
+          <div class="pod-bar p2">🥈</div>
+        </div>` : ''}
+        <div class="pod-col first">
+          <div class="pod-avt">${avatar(top3[0], 'md')}</div>
+          <div class="pod-name">${esc(top3[0].name.split(' ')[0])}</div>
+          <div class="pod-pts">${top3[0].points} pts</div>
+          <div class="pod-bar p1">🥇</div>
+        </div>
+        ${top3[2] ? `<div class="pod-col">
+          <div class="pod-avt">${avatar(top3[2], 'md')}</div>
+          <div class="pod-name">${esc(top3[2].name.split(' ')[0])}</div>
+          <div class="pod-pts">${top3[2].points} pts</div>
+          <div class="pod-bar p3">🥉</div>
+        </div>` : ''}
+      </div>` : '';
+      body = podium + rest.map((r) => `
         <div class="rank-row ${r.you ? 'me' : ''}" data-id="${r.id}">
-          <span class="pos">${r.rank <= 3 ? medal[r.rank - 1] : r.rank}</span>
+          <span class="pos">${r.rank}</span>
           ${avatar(r, 'sm')}
           <div class="info"><div class="nm">${r.you ? 'Você' : esc(r.name)}</div>
             <div class="lv">${esc(levelInfo(r.points).name)}</div></div>
           <span class="pts">${r.points} pts</span>
         </div>`).join('') +
-        '<p class="muted" style="margin-top:16px;font-size:13px">O ranking usa seus pontos reais — faça um check-in e suba ao vivo.</p>';
+        '<p class="muted" style="margin-top:16px;font-size:13px">Faça um check-in e suba ao vivo.</p>';
     } else {
       const reqs = soc.requests.map((p) => `
         <div class="req-row" data-id="${p.id}">
@@ -456,7 +481,10 @@
     }
 
     el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="big-head"><div><h1>Social</h1><p>#${soc.my_rank} no ranking entre amigos</p></div></div>
+      <div class="big-head">
+        <div><div class="eyebrow-head">RANKING GLOBAL</div><h1>Social</h1></div>
+        <span class="my-rank-pill">#${soc.my_rank} lugar</span>
+      </div>
       <div class="tabs2">
         <button class="${socialSeg === 'ranking' ? 'on' : ''}" data-seg="ranking">Ranking</button>
         <button class="${socialSeg === 'friends' ? 'on' : ''}" data-seg="friends">Amigos${soc.requests.length ? `<span class="count-pill">${soc.requests.length}</span>` : ''}</button>
@@ -517,6 +545,7 @@
         </div>
         <p class="ptext">${esc(p.text)}</p>
         ${p.attachment ? `<div class="postcard g-${p.attachment.category}">
+          ${sceneSVG(p.attachment.category)}
           <span class="pc">${p.attachment.emoji}</span>
           <span class="pc-label">${esc(p.attachment.label)}</span>
         </div>` : ''}
@@ -527,7 +556,9 @@
       </div>`).join('') || '<p class="muted">Faça um check-in para inaugurar o feed.</p>';
 
     el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="big-head"><div><h1>Feed</h1><p>O que sua tripulação anda explorando</p></div></div>
+      <div class="big-head">
+        <div><div class="eyebrow-head">ATIVIDADE</div><h1>Feed</h1></div>
+      </div>
       <div class="feedlist">${posts}</div>
     </div>`;
     el.scrollTop = st;
