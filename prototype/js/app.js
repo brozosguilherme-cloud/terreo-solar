@@ -64,6 +64,25 @@
     </div>`;
   }
 
+  function heroBlock(stats, lvl) {
+    const streakBadge = stats.streak.count
+      ? `<span class="hero-streak ${stats.streak.today ? 'on' : ''}">${ic('flame')} ${stats.streak.count} dias</span>`
+      : '';
+    const xpLine = lvl.max
+      ? `Nível máximo · <span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> PinPoints`
+      : `<span data-cuk="xp" data-cuv="${stats.points}">${stats.points}</span> / ${lvl.nextAt} PinPoints`;
+    return `<div class="hero-block">
+      <div class="hero-top">
+        <span class="hero-eyebrow">EXPLORADOR GLOBAL</span>
+        ${streakBadge}
+      </div>
+      <div class="hero-name">Olá, Guilherme</div>
+      <div class="hero-lvl">${lvl.emoji} ${esc(lvl.name)}</div>
+      <div class="hero-xp-row"><span>${xpLine}</span><span>${lvl.pct}%</span></div>
+      <div class="hero-bar"><div style="width:${lvl.pct}%"></div></div>
+    </div>`;
+  }
+
   // níveis de experiência (PinPoints = pontos do ledger)
   const LEVELS = [
     { name: 'Turista Curioso', at: 0, emoji: '🐣' },
@@ -244,55 +263,60 @@
     gastronomia: 'utensils', natureza: 'trees', evento: 'calendar-days',
   };
 
+  const MISSION_PALETTES = [
+    ['#E8952A', '#F5C842'],
+    ['#6E51A8', '#A07DE0'],
+    ['#1B8C3A', '#4DB870'],
+  ];
+
   function conquestCardsHtml(missions) {
-    return missions.map((m) => {
+    return missions.map((m, i) => {
       const glow = recentlyUpdated[m.id] && Date.now() - recentlyUpdated[m.id] < 9000 ? 'glow-new' : '';
-      const locStr = m.user_status === 'completed' ? '✓ CONCLUÍDA'
-        : m.user_status === 'upcoming' ? 'EM BREVE'
-        : `${m.progress.completed}/${m.progress.total} LOCAIS`;
-      const sub = m.user_status === 'upcoming' ? 'Abre em ' + fmtDate(m.starts_at)
-        : m.user_status === 'completed' ? 'Badge desbloqueado na coleção'
+      const done = m.user_status === 'completed';
+      const upcoming = m.user_status === 'upcoming';
+      const pct = done ? 100 : upcoming ? 0 : Math.round((m.progress.completed / m.progress.total) * 100);
+      const locStr = done ? '✓ CONCLUÍDA' : upcoming ? 'EM BREVE' : `${m.progress.completed}/${m.progress.total} LOCAIS`;
+      const sub = upcoming ? 'Abre em ' + fmtDate(m.starts_at)
+        : done ? 'Badge desbloqueado na coleção'
         : (m.description || 'Explore os locais desta missão.');
-      const bonusCls = m.user_status === 'completed' ? 'mc-bonus done' : 'mc-bonus';
-      const bonusTxt = m.user_status === 'completed'
-        ? `✓ +${m.bonus_points} PinPoints`
-        : `+${m.bonus_points} PinPoints Extra`;
-      return `<div class="mcard ${glow}" data-mission="${m.id}">
-        <div class="mc-head">
-          <div class="mc-icon">${m.badge}</div>
-          <span class="mc-prog">${locStr}</span>
+      const bonusCls = done ? 'mc-bonus done' : 'mc-bonus';
+      const bonusTxt = done ? `✓ +${m.bonus_points} PinPoints` : `+${m.bonus_points} PinPoints`;
+      const [c1, c2] = MISSION_PALETTES[i % MISSION_PALETTES.length];
+      return `<div class="mcard-fw ${glow}" data-mission="${m.id}">
+        <div class="mcard-strip" style="background:linear-gradient(90deg,${c1},${c2})"></div>
+        <div class="mcard-body">
+          <div class="mcard-icon" style="background:${c1}22">${m.badge}</div>
+          <div class="mcard-info">
+            <div class="mcard-meta"><span class="mc-loc-chip">${locStr}</span></div>
+            <div class="mcard-name">${esc(m.name)}</div>
+            <div class="mcard-sub">${esc(sub)}</div>
+          </div>
+          <span class="${bonusCls}">${bonusTxt}</span>
         </div>
-        <div class="mc-title">${esc(m.name)}</div>
-        <div class="mc-sub">${esc(sub)}</div>
-        <span class="${bonusCls}">${bonusTxt}</span>
+        ${!done && !upcoming ? `<div class="mcard-progbar"><div style="width:${pct}%"></div></div>` : ''}
       </div>`;
     }).join('') || '<p class="muted">Nenhuma trilha por aqui.</p>';
   }
 
   function placeCardsHtml(places) {
-    return places.map((p) => {
+    if (!places.length) return `<p class="muted">Nenhum local avulso — explore as trilhas acima.</p>`;
+    return `<div class="place-grid">${places.map((p) => {
       const visited = p.user_status === 'completed';
-      return `<div class="pcard" data-place="${p.id}">
-        <div class="pc-photo g-${p.category}">
+      return `<div class="pcard-v" data-place="${p.id}">
+        <div class="pcard-scene">
           ${sceneSVG(p.category)}
-          <span class="pc-em">${p.emoji}</span>
+          <span class="pcard-em">${p.emoji}</span>
+          ${visited
+            ? `<span class="pcard-badge done">${ic('check')}</span>`
+            : `<span class="pcard-badge pts">+${p.base_points}</span>`}
         </div>
-        <div class="pc-body">
-          <div class="pc-chips">
-            <span class="pc-cat">${esc(p.category).toUpperCase()}</span>
-            <span class="pc-sep">·</span>
-            <span class="pc-dist">${ic('map-pin')} ${fmtDist(p.distance_m)}</span>
-          </div>
-          <div class="pc-name">${esc(p.name)}</div>
-          <div class="pc-desc">${esc(p.description || '')}</div>
+        <div class="pcard-info">
+          <div class="pcard-cat">${esc(p.category).toUpperCase()}</div>
+          <div class="pcard-name">${esc(p.name)}</div>
+          <div class="pcard-dist">${ic('map-pin')} ${fmtDist(p.distance_m)}</div>
         </div>
-        ${visited
-          ? `<span class="pc-vist">${ic('check')}</span>`
-          : `<span class="pc-pts-badge">+${p.base_points}</span>`}
-        <span class="pc-chev">›</span>
       </div>`;
-    }).join('') ||
-      `<p class="muted">Nenhum local avulso — explore as trilhas acima.</p>`;
+    }).join('')}</div>`;
   }
 
   function bindHomeLists(el) {
@@ -310,22 +334,17 @@
     const feed = Backend.getHomeFeed(Sim);
     const places = feed.standalone_places.filter((p) => homeCat === 'todos' || p.category === homeCat);
 
-    el.innerHTML = `<div class="app-pad ${entering ? 'stagger' : ''}">
-      <div class="big-head">
-        <div>
-          <div class="eyebrow-head">EXPLORADOR GLOBAL</div>
-          <h1>Olá, Guilherme</h1>
-        </div>
-        <button class="notif-btn" data-bell>${ic('bell')}</button>
+    el.innerHTML = `<div class="${entering ? 'stagger' : ''}">
+      ${heroBlock(stats, lvl)}
+      <div class="home-body">
+        <div class="hfilter">${CATS.map(([k, label]) =>
+          `<button class="hchip ${homeCat === k ? 'on' : ''}" data-cat="${k}">${label}</button>`).join('')}</div>
+        ${Sim.accuracy > 50 ? '<div class="gps-warn">Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
+        <div class="sec-h"><h3>Trilhas &amp; Conquistas</h3><span class="sec-link" data-see-rank>Ranking</span></div>
+        <div id="home-missions">${conquestCardsHtml(feed.missions)}</div>
+        <div class="sec-h"><h3>Locais Próximos</h3><span class="sec-link" data-see-map>Ver mapa</span></div>
+        <div id="home-explore">${placeCardsHtml(places)}</div>
       </div>
-      ${levelCard(stats, lvl)}
-      <div class="hfilter">${CATS.map(([k, label]) =>
-        `<button class="hchip ${homeCat === k ? 'on' : ''}" data-cat="${k}">${label}</button>`).join('')}</div>
-      ${Sim.accuracy > 50 ? '<div class="gps-warn">Sinal de GPS fraco — precisão de ' + Sim.accuracy + ' m. Vá para área aberta.</div>' : ''}
-      <div class="sec-h">${ic('trophy')}<h3>Trilhas &amp; Conquistas</h3><span class="sec-link" data-see-rank>Ranking</span></div>
-      <div class="mcarousel" id="home-missions">${conquestCardsHtml(feed.missions)}</div>
-      <div class="sec-h">${ic('map-pin')}<h3>Missões Próximas a você</h3><span class="sec-link" data-see-map>Ver mapa</span></div>
-      <div id="home-explore">${placeCardsHtml(places)}</div>
     </div>`;
     el.scrollTop = st;
 
