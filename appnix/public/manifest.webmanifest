@@ -1,0 +1,11 @@
+{
+  "name": "AppNix",
+  "short_name": "AppNix",
+  "description": "Turismo, gastronomia e exploração urbana gamificada.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF6EE",
+  "theme_color": "#FFF6EE",
+  "lang": "pt-BR",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

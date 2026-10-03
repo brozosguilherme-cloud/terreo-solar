@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Identidade AppNix (sobrescreve as cores padrão do Capacitor) -->
+    <color name="colorPrimary">#E9A34D</color>
+    <color name="colorPrimaryDark">#C9842F</color>
+    <color name="colorAccent">#FFD166</color>
+    <color name="appnix_primary">#E9A34D</color>
+    <color name="appnix_background">#FFF6EE</color>
+</resources>

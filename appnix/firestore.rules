@@ -1,0 +1,127 @@
+rules_version = '2';
+
+// Regras do AppNix. Observação: a pontuação é calculada no cliente (transação);
+// as regras impedem regressões e edições alheias. Para anti-fraude total, mova
+// o check-in para uma Cloud Function (veja README).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function verified() {
+      return signedIn() && (request.auth.token.email_verified == true
+        || request.auth.token.firebase.sign_in_provider != 'password');
+    }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function data() { return request.resource.data; }
+
+    // ---------- users ----------
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && me() == uid
+        && data().points == 0 && data().level == 1
+        && data().missionsCompleted == 0 && data().checkins.size() == 0
+        && data().name is string && data().name.size() <= 80;
+      allow update: if signedIn() && me() == uid
+        && !changed().hasAny(['email', 'createdAt', 'acceptedTermsAt'])
+        && data().points >= resource.data.points
+        && data().checkins.size() >= resource.data.checkins.size()
+        && data().level >= 1 && data().level <= 10;
+      allow delete: if signedIn() && me() == uid;
+    }
+
+    // ---------- conteúdo (somente leitura; editado via console/Admin SDK) ----------
+    match /missions/{missionId} {
+      allow read: if signedIn();
+      allow update: if verified()
+        && changed().hasOnly(['completions'])
+        && data().completions == resource.data.completions + 1;
+    }
+    match /achievements/{achId} {
+      allow read: if signedIn();
+    }
+
+    // ---------- checkins ----------
+    match /checkins/{checkinId} {
+      allow read: if signedIn();
+      allow create: if verified()
+        && data().userId == me()
+        && data().rating is int && data().rating >= 1 && data().rating <= 5
+        && data().comment is string && data().comment.size() <= 280
+        && data().pointsEarned is int && data().pointsEarned >= 0;
+      allow delete: if signedIn() && resource.data.userId == me();
+    }
+
+    // ---------- feed ----------
+    function kudosToggle() {
+      let before = resource.data.kudosUsers;
+      let after = data().kudosUsers;
+      return changed().hasOnly(['kudosUsers', 'kudosCount']) && (
+        (after.toSet().difference(before.toSet()) == [me()].toSet()
+          && before.toSet().difference(after.toSet()).size() == 0
+          && data().kudosCount == resource.data.kudosCount + 1)
+        ||
+        (before.toSet().difference(after.toSet()) == [me()].toSet()
+          && after.toSet().difference(before.toSet()).size() == 0
+          && data().kudosCount == resource.data.kudosCount - 1)
+      );
+    }
+
+    match /feedEvents/{eventId} {
+      allow read: if signedIn();
+      allow create: if verified()
+        && data().userId == me()
+        && data().kudosCount == 0 && data().kudosUsers.size() == 0
+        && data().commentsCount == 0
+        && data().type in ['checkin', 'mission'];
+      allow update: if verified() && (
+        kudosToggle()
+        || (changed().hasOnly(['commentsCount']) && data().commentsCount == resource.data.commentsCount + 1)
+      );
+      allow delete: if signedIn() && resource.data.userId == me();
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if verified()
+          && data().userId == me()
+          && data().text is string && data().text.size() > 0 && data().text.size() <= 500;
+        allow delete: if signedIn() && (
+          resource.data.userId == me()
+          || get(/databases/$(database)/documents/feedEvents/$(eventId)).data.userId == me()
+        );
+      }
+    }
+
+    // consulta collectionGroup usada na exclusão de conta (LGPD)
+    match /{path=**}/comments/{commentId} {
+      allow read: if signedIn();
+    }
+
+    // ---------- notifications ----------
+    match /notifications/{notifId} {
+      allow read: if signedIn() && resource.data.targetUserId == me();
+      allow create: if verified()
+        && data().targetUserId != me()
+        && data().type in ['like', 'comment', 'friend_request']
+        && data().read == false;
+      allow update: if signedIn() && resource.data.targetUserId == me() && changed().hasOnly(['read']);
+      allow delete: if signedIn() && resource.data.targetUserId == me();
+    }
+
+    // ---------- friendships (id = uids ordenados unidos por "_") ----------
+    match /friendships/{fid} {
+      allow read: if signedIn() && me() in resource.data.users;
+      allow create: if verified()
+        && data().requesterId == me()
+        && data().users.size() == 2 && me() in data().users
+        && data().targetId in data().users && data().targetId != me()
+        && data().status == 'pending'
+        && (fid == data().users[0] + '_' + data().users[1] || fid == data().users[1] + '_' + data().users[0]);
+      allow update: if signedIn()
+        && resource.data.targetId == me()
+        && changed().hasOnly(['status'])
+        && data().status == 'accepted';
+      allow delete: if signedIn() && me() in resource.data.users;
+    }
+  }
+}
