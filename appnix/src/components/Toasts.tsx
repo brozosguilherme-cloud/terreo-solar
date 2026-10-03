@@ -14,8 +14,8 @@ export function Toasts() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12 }}
             className={cn(
-              'rounded-2xl px-4 py-3 text-sm font-medium shadow-float',
-              t.tone === 'error' ? 'bg-danger text-white' : t.tone === 'success' ? 'bg-ink text-white' : 'bg-white text-ink',
+              'max-w-full rounded-control px-4 py-3 type-label shadow-float',
+              t.tone === 'error' ? 'bg-danger text-white' : t.tone === 'success' ? 'bg-ink text-white' : 'bg-surface text-ink',
             )}
           >
             {t.message}

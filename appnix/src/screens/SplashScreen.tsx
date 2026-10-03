@@ -8,7 +8,7 @@ export function SplashScreen() {
         initial={{ scale: 0.6, opacity: 0, rotate: -60 }}
         animate={{ scale: 1, opacity: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 160, damping: 14 }}
-        className="flex size-24 items-center justify-center rounded-[32px] bg-primary shadow-[0_20px_50px_-12px_rgb(233_163_77/0.9)]"
+        className="flex size-24 items-center justify-center rounded-sheet bg-primary shadow-primary"
       >
         <motion.div animate={{ rotate: [0, 18, -12, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}>
           <Compass className="size-12 text-white" strokeWidth={1.8} />
@@ -18,11 +18,11 @@ export function SplashScreen() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
-        className="mt-6 font-display text-4xl font-bold tracking-tight"
+        className="mt-6 type-display"
       >
         App<span className="text-primary">Nix</span>
       </motion.h1>
-      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-2 text-sm text-muted">
+      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-2 type-callout text-muted">
         Explore. Faça check-in. Suba de nível.
       </motion.p>
       <motion.div className="mt-10 flex gap-1.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>

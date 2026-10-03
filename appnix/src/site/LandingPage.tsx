@@ -29,29 +29,29 @@ export function LandingPage() {
       <div className="mx-auto flex min-h-dvh max-w-6xl items-center gap-16 px-10 py-12">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary">
+            <div className="flex size-11 items-center justify-center rounded-control bg-primary">
               <Compass className="size-6 text-white" />
             </div>
-            <span className="font-display text-2xl font-bold">
+            <span className="type-title2">
               App<span className="text-primary">Nix</span>
             </span>
           </div>
-          <h1 className="mt-10 font-display text-6xl leading-[1.05] font-bold tracking-tight">
+          <h1 className="mt-10 font-display text-6xl leading-[1.05] font-bold tracking-[-0.03em]">
             Sua cidade é o <span className="text-primary">mapa do tesouro</span>.
           </h1>
-          <p className="mt-5 max-w-lg text-lg text-muted">
+          <p className="mt-5 max-w-lg text-lg leading-7 text-muted">
             Turismo, gastronomia e exploração urbana gamificada. Visite lugares reais, faça check-ins fotográficos e suba no ranking.
           </p>
           <div className="mt-10 grid max-w-xl grid-cols-2 gap-4">
             {FEATURES.map((f) => (
-              <div key={f.title} className="rounded-[24px] bg-white p-5 shadow-card">
+              <div key={f.title} className="rounded-card bg-surface p-5 shadow-card">
                 <f.icon className="size-6 text-primary" />
-                <h3 className="mt-3 font-semibold">{f.title}</h3>
-                <p className="mt-1 text-sm text-muted">{f.text}</p>
+                <h3 className="mt-3 type-title3">{f.title}</h3>
+                <p className="mt-1 type-callout text-muted">{f.text}</p>
               </div>
             ))}
           </div>
-          <p className="mt-8 flex items-center gap-2 text-sm text-muted">
+          <p className="mt-8 flex items-center gap-2 type-callout text-muted">
             <Shield className="size-4" /> Em conformidade com a LGPD · Disponível para Android
           </p>
         </div>

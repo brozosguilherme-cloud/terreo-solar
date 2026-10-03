@@ -1,7 +1,7 @@
 import { ArrowLeft, ChevronRight, Cookie, FileText, Lock, LogOut, MapPin, Settings, Shield, Sparkles, Stamp, Trash2, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/BottomSheet';
-import { Avatar, Button, ProgressBar, cn } from '../components/ui';
+import { Avatar, Button, Card, IconButton, ProgressBar, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
 import { LEVEL_TIERS, getUserLevelInfo } from '../lib/levels';
@@ -60,61 +60,58 @@ export function ProfileScreen() {
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
-      <div className="relative rounded-b-[40px] bg-secondary px-5 pt-safe pb-6">
+      {/* Hero */}
+      <div className="rounded-b-sheet bg-secondary px-gutter pt-safe pb-6">
         <div className="flex items-center justify-between">
-          <button onClick={() => setTab('home')} className="flex size-11 items-center justify-center rounded-2xl bg-white shadow-card" aria-label="Voltar">
-            <ArrowLeft className="size-5" />
-          </button>
-          <button onClick={() => setSettings(true)} className="flex size-11 items-center justify-center rounded-2xl bg-white shadow-card" aria-label="Configurações">
-            <Settings className="size-5" />
-          </button>
+          <IconButton icon={ArrowLeft} label="Voltar" onClick={() => setTab('home')} />
+          <IconButton icon={Settings} label="Configurações" onClick={() => setSettings(true)} />
         </div>
         <div className="mt-2 flex flex-col items-center text-center">
-          <Avatar src={profile.avatarUrl} name={profile.name} points={profile.points} size={104} />
-          <h1 className="mt-3 text-2xl font-bold">{profile.name}</h1>
-          <p className="text-sm text-muted">{profile.email}</p>
-          <button onClick={() => setLevels(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">
+          <Avatar src={profile.avatarUrl} name={profile.name} points={profile.points} size={96} />
+          <h1 className="mt-3 type-title2">{profile.name}</h1>
+          <p className="type-callout text-muted">{profile.email}</p>
+          <button onClick={() => setLevels(true)} className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 type-label text-white transition active:scale-95">
             <Trophy className="size-4 text-accent" /> Nível {level.levelNum} · {level.title}
           </button>
         </div>
-        <div className="mt-5 rounded-[24px] bg-white p-4 shadow-card">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-semibold">{level.nextTierTitle ? `Rumo a ${level.nextTierTitle}` : 'Nível máximo!'}</span>
-            <span className="text-muted">{level.progressPercent}%</span>
+        <Card className="mt-5 p-card">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="truncate type-label">{level.nextTierTitle ? `Rumo a ${level.nextTierTitle}` : 'Nível máximo!'}</span>
+            <span className="type-caption type-number text-muted">{level.progressPercent}%</span>
           </div>
           <ProgressBar percent={level.progressPercent} />
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 type-caption type-number text-muted">
             {level.nextTierRequiredPontos != null
               ? `${formatPoints(level.currentPontos)} / ${formatPoints(level.nextTierRequiredPontos)} pts`
               : `${formatPoints(level.currentPontos)} pts acumulados`}
           </p>
-        </div>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 px-5 py-5">
+      {/* Estatísticas */}
+      <div className="grid grid-cols-3 gap-3 px-gutter pt-6">
         {[
-          { icon: Sparkles, label: 'Pontos', value: formatPoints(profile.points), color: '#FFD166' },
-          { icon: Trophy, label: 'Missões', value: String(profile.missionsCompleted), color: '#E9A34D' },
-          { icon: Stamp, label: 'Passaporte', value: String(profile.checkins.length), color: '#00D084' },
+          { icon: Sparkles, label: 'Pontos', value: formatPoints(profile.points), cls: 'bg-accent/30 text-primary-strong' },
+          { icon: Trophy, label: 'Missões', value: String(profile.missionsCompleted), cls: 'bg-secondary text-primary-strong' },
+          { icon: Stamp, label: 'Passaporte', value: String(profile.checkins.length), cls: 'bg-success-soft text-success-ink' },
         ].map((s) => (
-          <div key={s.label} className="rounded-[24px] bg-white p-4 text-center shadow-card">
-            <div className="mx-auto mb-2 flex size-9 items-center justify-center rounded-xl" style={{ background: `${s.color}33` }}>
-              <s.icon className="size-4.5" style={{ color: s.color === '#FFD166' ? '#C9842F' : s.color }} />
-            </div>
-            <p className="font-display text-xl font-bold">{s.value}</p>
-            <p className="text-xs text-muted">{s.label}</p>
-          </div>
+          <Card key={s.label} className="flex flex-col items-center px-2 py-4">
+            <span className={cn('flex size-9 items-center justify-center rounded-control', s.cls)}>
+              <s.icon className="size-4" />
+            </span>
+            <span className="mt-2 type-stat">{s.value}</span>
+            <span className="type-caption text-muted">{s.label}</span>
+          </Card>
         ))}
       </div>
 
-      <section className="px-4 pb-32">
-        <h2 className="mb-3 px-1 text-xl font-semibold">Minhas atividades</h2>
+      <section className="mt-section px-gutter pb-nav">
+        <h2 className="mb-3 type-title2">Minhas atividades</h2>
         <FeedList
           events={events}
-          compact
           emptyAction={
-            <Button onClick={() => setTab('checkin')}>
-              <MapPin className="size-4" /> Fazer check-in
+            <Button size="md" onClick={() => setTab('checkin')}>
+              <MapPin /> Fazer check-in
             </Button>
           }
         />
@@ -122,7 +119,7 @@ export function ProfileScreen() {
 
       {/* Configurações */}
       <BottomSheet open={settings} onClose={() => setSettings(false)} title="Configurações">
-        <ul className="px-3 pb-6">
+        <ul className="space-y-1 px-3 pb-4">
           {settingsItems.map((it) => (
             <li key={it.label}>
               <button
@@ -130,36 +127,36 @@ export function ProfileScreen() {
                   setSettings(false);
                   it.onClick();
                 }}
-                className={cn('flex w-full items-center gap-3 rounded-2xl p-3.5 text-left active:bg-bg', it.danger ? 'text-danger' : 'text-ink')}
+                className={cn('flex w-full items-center gap-3 rounded-control p-3 text-left transition active:bg-bg', it.danger ? 'text-danger-ink' : 'text-ink')}
               >
-                <span className={cn('flex size-10 items-center justify-center rounded-xl', it.danger ? 'bg-[#FDE8E2]' : 'bg-bg')}>
+                <span className={cn('flex size-10 items-center justify-center rounded-control', it.danger ? 'bg-danger-soft' : 'bg-bg')}>
                   <it.icon className="size-5" />
                 </span>
-                <span className="flex-1 font-medium">{it.label}</span>
+                <span className="flex-1 type-body-strong">{it.label}</span>
                 <ChevronRight className="size-4 text-muted" />
               </button>
             </li>
           ))}
         </ul>
-        <p className="px-6 pb-6 text-center text-xs text-muted">AppNix v1.0.0 · Seus dados são tratados conforme a LGPD (Lei 13.709/2018).</p>
+        <p className="px-gutter pb-6 text-center type-caption text-muted">AppNix v1.0.0 · Seus dados são tratados conforme a LGPD (Lei 13.709/2018).</p>
       </BottomSheet>
 
       {/* Tabela de níveis */}
       <BottomSheet open={levels} onClose={() => setLevels(false)} title="Níveis de explorador">
-        <ol className="space-y-2 px-5 pb-6">
+        <ol className="space-y-2 px-gutter pb-6">
           {LEVEL_TIERS.map((t) => {
             const reached = profile.points >= t.minPontos;
             const current = t.level === level.levelNum;
             return (
-              <li key={t.level} className={cn('flex items-center gap-3 rounded-[20px] p-3', current ? 'bg-ink text-white' : reached ? 'bg-secondary' : 'bg-bg')}>
-                <span className={cn('flex size-10 items-center justify-center rounded-xl font-display font-bold', current ? 'bg-accent text-ink' : reached ? 'bg-primary text-white' : 'bg-white text-muted')}>
+              <li key={t.level} className={cn('flex items-center gap-3 rounded-card p-3', current ? 'bg-ink text-white' : reached ? 'bg-secondary' : 'bg-bg')}>
+                <span className={cn('flex size-10 items-center justify-center rounded-control type-label type-number', current ? 'bg-accent text-ink' : reached ? 'bg-primary text-white' : 'bg-surface text-muted')}>
                   {reached ? t.level : <Lock className="size-4" />}
                 </span>
                 <div className="flex-1">
-                  <p className="font-semibold">{t.title}</p>
-                  <p className={cn('text-xs', current ? 'text-white/60' : 'text-muted')}>{formatPoints(t.minPontos)} pts</p>
+                  <p className="type-body-strong">{t.title}</p>
+                  <p className={cn('type-caption type-number', current ? 'text-white/60' : 'text-muted')}>{formatPoints(t.minPontos)} pts</p>
                 </div>
-                {current && <span className="text-xs font-semibold text-accent">Atual</span>}
+                {current && <span className="type-caption font-semibold text-accent">Atual</span>}
               </li>
             );
           })}
@@ -182,7 +179,7 @@ export function ProfileScreen() {
           </div>
         }
       >
-        <p className="px-6 pb-4 text-muted">Seu progresso fica salvo na nuvem. Entre novamente quando quiser.</p>
+        <p className="px-gutter pb-6 type-body text-muted">Seu progresso fica salvo na nuvem. Entre novamente quando quiser.</p>
       </BottomSheet>
 
       {/* Exclusão de conta — LGPD Art. 18 */}
@@ -195,10 +192,10 @@ export function ProfileScreen() {
         }}
         title={
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-[#FDE8E2]">
+            <span className="flex size-10 items-center justify-center rounded-control bg-danger-soft">
               <Trash2 className="size-5 text-danger" />
             </span>
-            <h2 className="text-xl font-semibold">Excluir conta</h2>
+            <h2 className="type-title2">Excluir conta</h2>
           </div>
         }
         footer={
@@ -207,11 +204,11 @@ export function ProfileScreen() {
           </Button>
         }
       >
-        <div className="px-6 pb-4">
-          <p className="text-muted">
+        <div className="px-gutter pb-6">
+          <p className="type-body text-muted">
             Conforme o <strong className="text-ink">Art. 18 da LGPD</strong>, você pode solicitar a eliminação dos seus dados. Esta ação é <strong className="text-ink">irreversível</strong> e removerá:
           </p>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted">
+          <ul className="mt-3 list-disc space-y-1 pl-5 type-callout text-muted">
             <li>Perfil, pontos, nível e passaporte de check-ins</li>
             <li>Fotos enviadas e publicações do feed</li>
             <li>Comentários, curtidas recebidas, amizades e notificações</li>
@@ -224,12 +221,12 @@ export function ProfileScreen() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Confirme sua senha"
               autoComplete="current-password"
-              className="mt-4 h-12 w-full rounded-2xl border border-line bg-bg px-4 text-sm outline-none focus:border-danger"
+              className="mt-4 h-13 w-full rounded-control border border-line bg-bg px-4 type-body outline-none focus:border-danger"
             />
           )}
-          {!needsPassword && <p className="mt-4 text-xs text-muted">Você precisará confirmar sua conta Google.</p>}
-          <label className="mt-4 flex items-start gap-3 text-sm">
-            <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#E5484D]" />
+          {!needsPassword && <p className="mt-4 type-caption text-muted">Você precisará confirmar sua conta Google.</p>}
+          <label className="mt-4 flex items-start gap-3 type-callout">
+            <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--color-danger)]" />
             Entendo que meus dados serão apagados permanentemente.
           </label>
         </div>

@@ -3,7 +3,7 @@ import { Camera, CheckCircle2, LocateFixed, MapPin, Navigation, Users, X } from 
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
 import { Circle, CircleMarker, MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
-import { Button, CATEGORY_META, MissionImage, PointsPill, cn } from '../components/ui';
+import { Button, CATEGORY_META, LinkButton, Meta, MissionImage, PointsPill, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { CHECKIN_RADIUS_METERS, directionsUrl, formatDistance, type LatLng } from '../lib/geo';
 import type { Mission, MissionCategory } from '../services/types';
@@ -132,7 +132,7 @@ export function MapScreen() {
 
       {/* Filtros de categoria */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 pt-safe">
-        <div className="no-scrollbar pointer-events-auto flex gap-2 overflow-x-auto px-4 pt-1 pb-2">
+        <div className="no-scrollbar pointer-events-auto flex gap-2 overflow-x-auto px-gutter pb-2">
           {(['all', 'turismo', 'gastronomia', 'explorador'] as const).map((c) => {
             const meta = c === 'all' ? null : CATEGORY_META[c];
             const active = category === c;
@@ -140,7 +140,7 @@ export function MapScreen() {
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                className={cn('flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold shadow-card backdrop-blur-xl', active ? 'bg-ink text-white' : 'bg-white/90 text-ink')}
+                className={cn('flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 type-label shadow-card backdrop-blur-xl', active ? 'bg-ink text-white' : 'bg-white/90 text-ink')}
               >
                 {meta ? <meta.icon className="size-4" style={{ color: active ? undefined : meta.color }} /> : <MapPin className="size-4" />}
                 {meta?.label ?? 'Todos'}
@@ -149,14 +149,14 @@ export function MapScreen() {
           })}
         </div>
         {positionError && !position && (
-          <p className="pointer-events-auto mx-4 rounded-2xl bg-white/95 px-4 py-2.5 text-xs text-muted shadow-card">📍 Ative a localização para ver sua posição e as distâncias.</p>
+          <p className="pointer-events-auto mx-gutter rounded-control bg-white/95 px-4 py-2.5 type-caption text-muted shadow-card">📍 Ative a localização para ver sua posição e as distâncias.</p>
         )}
       </div>
 
       <button
         onClick={() => position && setFlyTarget({ center: position, zoom: 16, key: Date.now() })}
         disabled={!position}
-        className={cn('absolute right-4 z-10 flex size-12 items-center justify-center rounded-2xl bg-white shadow-float transition-all disabled:opacity-50', selected ? 'bottom-[300px]' : 'bottom-28')}
+        className={cn('absolute right-gutter z-10 flex size-11 items-center justify-center rounded-control bg-surface shadow-float transition-all disabled:opacity-40', selected ? 'bottom-[296px]' : 'bottom-28')}
         aria-label="Centralizar na minha localização"
       >
         <LocateFixed className="size-5 text-primary" />
@@ -169,31 +169,31 @@ export function MapScreen() {
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
-            className="absolute inset-x-4 bottom-28 z-20 overflow-hidden rounded-[28px] bg-white shadow-float"
+            className="absolute inset-x-gutter bottom-28 z-20 overflow-hidden rounded-card bg-surface shadow-float"
           >
             <div className="flex gap-3 p-3">
-              <MissionImage src={selected.image} category={selected.category} className="size-24 shrink-0 rounded-[20px]" iconSize="size-9" />
+              <MissionImage src={selected.image} category={selected.category} className="size-22 shrink-0 rounded-control" iconSize="size-8" decor={false} />
               <div className="min-w-0 flex-1 py-0.5">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-display text-lg leading-tight font-semibold">{selected.title}</h3>
+                  <h3 className="type-title3">{selected.title}</h3>
                   <button onClick={() => setSelected(null)} className="-mt-1 -mr-1 rounded-full p-1.5 text-muted" aria-label="Fechar">
                     <X className="size-4" />
                   </button>
                 </div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <PointsPill points={selected.points} double={selected.isDoublePoints} />
-                  <span className="inline-flex items-center gap-1"><Navigation className="size-3.5" /> {formatDistance(d)}</span>
-                  <span className="inline-flex items-center gap-1"><Users className="size-3.5" /> {selected.completions}</span>
+                  <Meta icon={Navigation}>{formatDistance(d)}</Meta>
+                  <Meta icon={Users}>{selected.completions}</Meta>
                 </div>
-                <p className="mt-1.5 line-clamp-2 text-xs text-muted">{selected.description}</p>
+                <p className="mt-1.5 line-clamp-2 type-caption text-muted">{selected.description}</p>
               </div>
             </div>
             <div className="flex gap-2 px-3 pb-3">
-              <a href={directionsUrl(selected, position)} target="_blank" rel="noreferrer" className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl border border-line text-sm font-semibold">
-                <Navigation className="size-4" /> Rota
-              </a>
-              <Button className="h-11 flex-[1.6] text-sm" disabled={done} onClick={() => openCheckin(selected.id)}>
-                {done ? <><CheckCircle2 className="size-4" /> Concluída</> : <><Camera className="size-4" /> {inRange ? 'Fazer check-in' : 'Check-in'}</>}
+              <LinkButton href={directionsUrl(selected, position)} size="md" className="flex-1">
+                <Navigation /> Rota
+              </LinkButton>
+              <Button size="md" className="flex-[1.6]" disabled={done} onClick={() => openCheckin(selected.id)}>
+                {done ? <><CheckCircle2 /> Concluída</> : <><Camera /> {inRange ? 'Fazer check-in' : 'Check-in'}</>}
               </Button>
             </div>
           </motion.div>

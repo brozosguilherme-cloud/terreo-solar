@@ -1,14 +1,19 @@
 import { Compass, Landmark, LoaderCircle, Mountain, Route, Sparkles, Star, Utensils, type LucideIcon } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { getUserLevelInfo } from '../lib/levels';
 import type { MissionCategory } from '../services/types';
 
 export const cn = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
-export const CATEGORY_META: Record<MissionCategory, { label: string; icon: LucideIcon; color: string; bg: string; gradient: string }> = {
-  turismo: { label: 'Turismo', icon: Landmark, color: '#E9A34D', bg: '#FFF1DE', gradient: 'linear-gradient(135deg,#F6C886 0%,#E9A34D 55%,#C9842F 100%)' },
-  gastronomia: { label: 'Gastronomia', icon: Utensils, color: '#E5735A', bg: '#FDE8E2', gradient: 'linear-gradient(135deg,#F7B39B 0%,#E5735A 55%,#B9503B 100%)' },
-  explorador: { label: 'Explorador', icon: Mountain, color: '#3FA58A', bg: '#DFF3EC', gradient: 'linear-gradient(135deg,#8FD4BE 0%,#3FA58A 55%,#2A7A65 100%)' },
+/* ------------------------------------------------------------------ */
+/* Categorias                                                           */
+/* ------------------------------------------------------------------ */
+
+export const CATEGORY_META: Record<MissionCategory, { label: string; icon: LucideIcon; color: string; soft: string; text: string; bg: string; gradient: string }> = {
+  turismo: { label: 'Turismo', icon: Landmark, color: 'var(--color-turismo)', soft: 'var(--color-turismo-soft)', text: 'text-primary-strong', bg: 'bg-turismo-soft', gradient: 'linear-gradient(135deg,#F6C886 0%,#E9A34D 60%,#D08A35 100%)' },
+  gastronomia: { label: 'Gastronomia', icon: Utensils, color: 'var(--color-gastronomia)', soft: 'var(--color-gastronomia-soft)', text: 'text-gastronomia', bg: 'bg-gastronomia-soft', gradient: 'linear-gradient(135deg,#F7B39B 0%,#E5735A 60%,#C95A42 100%)' },
+  explorador: { label: 'Explorador', icon: Mountain, color: 'var(--color-explorador)', soft: 'var(--color-explorador-soft)', text: 'text-explorador', bg: 'bg-explorador-soft', gradient: 'linear-gradient(135deg,#8FD4BE 0%,#3FA58A 60%,#2E8A71 100%)' },
 };
 
 export const ACHIEVEMENT_ICONS: Record<string, LucideIcon> = {
@@ -20,32 +25,90 @@ export const ACHIEVEMENT_ICONS: Record<string, LucideIcon> = {
   route: Route,
 };
 
+/* ------------------------------------------------------------------ */
+/* Feedback                                                             */
+/* ------------------------------------------------------------------ */
+
 export function Spinner({ className }: { className?: string }) {
   return <LoaderCircle className={cn('animate-spin', className ?? 'size-5')} aria-hidden />;
 }
 
+/** Placeholder com brilho para listas carregando. */
+export function Skeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn('relative overflow-hidden bg-surface-muted', className)} aria-hidden>
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+    </div>
+  );
+}
+
+export function EmptyState({ icon: Icon, title, text, action }: { icon: LucideIcon; title: string; text?: string; action?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center px-8 py-10 text-center">
+      <div className="mb-4 flex size-16 items-center justify-center rounded-card bg-secondary">
+        <Icon className="size-7 text-primary" />
+      </div>
+      <h3 className="type-title3">{title}</h3>
+      {text && <p className="mt-1 type-callout text-muted">{text}</p>}
+      {action && <div className="mt-5">{action}</div>}
+    </div>
+  );
+}
+
+type Tone = 'success' | 'danger' | 'neutral' | 'brand';
+const TONES: Record<Tone, string> = {
+  success: 'bg-success-soft text-success-ink',
+  danger: 'bg-danger-soft text-danger-ink',
+  neutral: 'bg-surface-muted text-muted',
+  brand: 'bg-secondary text-ink',
+};
+
+/** Faixa de status inline (ex.: "Você está no local"). */
+export function StatusBanner({ tone, icon: Icon, children, className }: { tone: Tone; icon?: LucideIcon; children: ReactNode; className?: string }) {
+  return (
+    <div className={cn('flex items-start gap-2 rounded-control px-4 py-3 type-label', TONES[tone], className)} role="status">
+      {Icon && <Icon className="mt-0.5 size-4 shrink-0" />}
+      <span>{children}</span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Ações                                                                */
+/* ------------------------------------------------------------------ */
+
 type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dark';
+type BtnSize = 'lg' | 'md' | 'sm';
+
+const BTN_VARIANTS: Record<BtnVariant, string> = {
+  primary: 'bg-primary text-white shadow-primary active:bg-primary-strong',
+  secondary: 'bg-surface text-ink border border-line active:bg-surface-muted',
+  ghost: 'bg-transparent text-ink active:bg-surface-muted',
+  danger: 'bg-danger text-white active:opacity-90',
+  dark: 'bg-ink text-white active:bg-black',
+};
+const BTN_SIZES: Record<BtnSize, string> = {
+  lg: 'h-13 px-6 type-body-strong gap-2 [&_svg]:size-5',
+  md: 'h-11 px-5 type-label gap-2 [&_svg]:size-4',
+  sm: 'h-9 px-3.5 type-caption font-semibold gap-1.5 [&_svg]:size-4',
+};
 
 export function Button({
   variant = 'primary',
+  size = 'lg',
   loading,
   className,
   children,
   disabled,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; loading?: boolean }) {
-  const styles: Record<BtnVariant, string> = {
-    primary: 'bg-primary text-white shadow-[0_8px_24px_-8px_rgb(233_163_77/0.8)] active:bg-primary-dark',
-    secondary: 'bg-secondary text-ink border border-[#F3E2CF] active:bg-[#FBEBDB]',
-    ghost: 'bg-transparent text-ink active:bg-black/5',
-    danger: 'bg-danger text-white active:opacity-90',
-    dark: 'bg-ink text-white active:bg-black',
-  };
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; size?: BtnSize; loading?: boolean }) {
   return (
     <button
       className={cn(
-        'inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100',
-        styles[variant],
+        'inline-flex shrink-0 items-center justify-center rounded-control transition active:scale-[0.97] disabled:pointer-events-none disabled:border-transparent disabled:bg-surface-muted disabled:text-muted disabled:shadow-none',
+        BTN_VARIANTS[variant],
+        BTN_SIZES[size],
+        size === 'sm' && 'rounded-full',
         className,
       )}
       disabled={disabled || loading}
@@ -56,41 +119,120 @@ export function Button({
   );
 }
 
-const RING_COLORS = ['#E9A34D', '#E9A34D', '#E9A34D', '#E9A34D', '#E58F3A', '#E07B2E', '#FFD166', '#F4B942', '#E9A34D', '#FFD166'];
+/** Link com aparência de botão (ex.: abrir rota no Google Maps). */
+export function LinkButton({ href, children, className, size = 'lg' }: { href: string; children: ReactNode; className?: string; size?: BtnSize }) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className={cn('inline-flex items-center justify-center rounded-control transition active:scale-[0.97]', BTN_VARIANTS.secondary, BTN_SIZES[size], className)}>
+      {children}
+    </a>
+  );
+}
 
-/** Avatar com anel de progresso do nível. */
-export function Avatar({ src, name, points, size = 44, ring = true }: { src?: string; name?: string; points?: number; size?: number; ring?: boolean }) {
+/** Botão quadrado de 44 px só com ícone. `label` é obrigatório (acessibilidade). */
+export function IconButton({ icon: Icon, label, onClick, badge, className, disabled }: { icon: LucideIcon; label: string; onClick?: () => void; badge?: number; className?: string; disabled?: boolean }) {
+  return (
+    <button onClick={onClick} disabled={disabled} aria-label={label} className={cn('relative flex size-11 shrink-0 items-center justify-center rounded-control bg-surface shadow-card transition active:scale-95 disabled:opacity-40', className)}>
+      <Icon className="size-5" />
+      {!!badge && (
+        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 type-caption font-semibold text-white ring-2 ring-bg">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** Pílula de filtro (altura 40). */
+export function Chip({ active, onClick, icon: Icon, iconColor, children }: { active: boolean; onClick: () => void; icon?: LucideIcon; iconColor?: string; children: ReactNode }) {
+  return (
+    <button
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn('flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 type-label transition', active ? 'border-ink bg-ink text-white' : 'border-line bg-surface text-ink')}
+    >
+      {Icon && <Icon className="size-4" style={{ color: active ? undefined : iconColor }} />}
+      {children}
+    </button>
+  );
+}
+
+/** Controle segmentado com indicador animado. */
+export function Segmented<T extends string>({ id, value, onChange, options, className }: { id: string; value: T; onChange: (v: T) => void; options: { value: T; label: string; icon?: LucideIcon }[]; className?: string }) {
+  return (
+    <div className={cn('grid rounded-control bg-surface-muted p-1', className)} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }} role="tablist">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button key={o.value} role="tab" aria-selected={active} onClick={() => onChange(o.value)} className={cn('relative flex h-10 items-center justify-center gap-1.5 rounded-[12px] type-label transition-colors', active ? 'text-ink' : 'text-muted')}>
+            {active && <motion.div layoutId={`seg-${id}`} className="absolute inset-0 rounded-[12px] bg-surface shadow-card" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+            {o.icon && <o.icon className="relative size-4" />}
+            <span className="relative">{o.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Estrutura de tela                                                    */
+/* ------------------------------------------------------------------ */
+
+/** Cabeçalho padrão: título 28 px, subtítulo opcional e ações à direita. */
+export function ScreenHeader({ title, subtitle, leading, trailing }: { title: string; subtitle?: string; leading?: ReactNode; trailing?: ReactNode }) {
+  return (
+    <header className="flex items-center gap-3 px-gutter pt-safe pb-5">
+      {leading}
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate type-title1">{title}</h1>
+        {subtitle && <p className="mt-0.5 truncate type-callout text-muted">{subtitle}</p>}
+      </div>
+      {trailing}
+    </header>
+  );
+}
+
+export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center justify-between px-gutter">
+      <h2 className="type-title2">{title}</h2>
+      {action && <div className="type-callout text-muted">{action}</div>}
+    </div>
+  );
+}
+
+export function Card({ children, className, as: Tag = 'div' }: { children: ReactNode; className?: string; as?: 'div' | 'section' | 'article' }) {
+  return <Tag className={cn('rounded-card bg-surface shadow-card', className)}>{children}</Tag>;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dados                                                                */
+/* ------------------------------------------------------------------ */
+
+/** Avatar com anel de progresso do nível. Tamanhos do spec: 32, 40, 48, 64, 96. */
+export function Avatar({ src, name, points, size = 40, ring = true }: { src?: string; name?: string; points?: number; size?: 32 | 40 | 48 | 64 | 96; ring?: boolean }) {
   const info = getUserLevelInfo(points ?? 0);
-  const stroke = 3;
+  const [failed, setFailed] = useState<string | null>(null);
+  const showRing = ring && points != null;
+  const stroke = size >= 64 ? 4 : 3;
   const r = size / 2 - stroke / 2;
   const c = 2 * Math.PI * r;
-  const color = RING_COLORS[info.levelNum - 1];
-  const [failed, setFailed] = useState<string | null>(null);
   const showImg = !!src && failed !== src;
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      {ring && points != null && (
+      {showRing && (
         <svg className="absolute inset-0 -rotate-90" width={size} height={size} aria-hidden>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#EFE7DE" strokeWidth={stroke} />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke={color}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={c}
-            strokeDashoffset={c * (1 - info.progressPercent / 100)}
-          />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-line-soft)" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={info.levelNum >= 7 ? 'var(--color-accent)' : 'var(--color-primary)'} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(4, info.progressPercent) / 100)} />
         </svg>
       )}
-      <div className="absolute overflow-hidden rounded-full bg-secondary" style={{ inset: ring && points != null ? stroke + 2 : 0 }}>
+      <div className="absolute overflow-hidden rounded-full bg-secondary" style={{ inset: showRing ? stroke + 2 : 0 }}>
         {showImg ? (
-          <img src={src} alt={name ?? ''} className="size-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(src)} />
+          <img src={src} alt="" className="size-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(src)} />
         ) : (
-          <div className="flex size-full items-center justify-center font-display font-bold text-primary" style={{ fontSize: size * 0.38 }}>
-            {name?.[0]?.toUpperCase() ?? '?'}
+          <div className="flex size-full items-center justify-center font-display font-semibold text-primary-strong" style={{ fontSize: Math.round(size * 0.36) }}>
+            {name?.trim()[0]?.toUpperCase() ?? '?'}
           </div>
         )}
       </div>
@@ -99,26 +241,22 @@ export function Avatar({ src, name, points, size = 44, ring = true }: { src?: st
 }
 
 export function LevelBadge({ level, className }: { level: number; className?: string }) {
-  return (
-    <span className={cn('inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-primary-dark', className)}>
-      Nv {level}
-    </span>
-  );
+  return <span className={cn('inline-flex h-5 items-center rounded-full bg-secondary px-2 type-caption font-semibold text-primary-strong', className)}>Nv {level}</span>;
 }
 
 export function PointsPill({ points, double, className }: { points: number; double?: boolean; className?: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-ink', className)}>
+    <span className={cn('inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 type-caption font-semibold text-ink', className)}>
       <Sparkles className="size-3.5" />
-      {double ? points * 2 : points} pts
-      {double && <span className="rounded-full bg-ink px-1.5 text-[10px] text-accent">2x</span>}
+      <span className="type-number">{double ? points * 2 : points}</span> pts
+      {double && <span className="ml-0.5 rounded-full bg-ink px-1.5 text-[10px] leading-4 text-accent">2x</span>}
     </span>
   );
 }
 
 export function Stars({ value, onChange, size = 16 }: { value: number; onChange?: (v: number) => void; size?: number }) {
   return (
-    <div className="flex items-center gap-1" role={onChange ? 'radiogroup' : undefined} aria-label={`${value} de 5 estrelas`}>
+    <div className={cn('flex items-center', onChange ? 'gap-1' : 'gap-0.5')} role={onChange ? 'radiogroup' : 'img'} aria-label={`${value} de 5 estrelas`}>
       {[1, 2, 3, 4, 5].map((n) => {
         const icon = <Star style={{ width: size, height: size }} className={n <= value ? 'fill-accent text-accent' : 'text-line'} />;
         return onChange ? (
@@ -133,46 +271,45 @@ export function Stars({ value, onChange, size = 16 }: { value: number; onChange?
   );
 }
 
-export function ProgressBar({ percent, className, color = 'var(--color-primary)' }: { percent: number; className?: string; color?: string }) {
+export function ProgressBar({ percent, className, tone = 'primary' }: { percent: number; className?: string; tone?: 'primary' | 'success' | 'accent' }) {
+  const color = { primary: 'bg-primary', success: 'bg-success', accent: 'bg-accent' }[tone];
   return (
-    <div className={cn('h-2 w-full overflow-hidden rounded-full bg-[#F0E8DF]', className)}>
-      <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.max(0, Math.min(100, percent))}%`, background: color }} />
+    <div className={cn('h-2 w-full overflow-hidden rounded-full bg-surface-muted', className)} role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+      <div className={cn('h-full rounded-full transition-[width] duration-700', color)} style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} />
     </div>
   );
 }
 
 /** Imagem da missão com fallback de gradiente + ícone da categoria. */
-export function MissionImage({ src, category, className, iconSize = 'size-10' }: { src?: string; category: MissionCategory; className?: string; iconSize?: string }) {
+export function MissionImage({ src, category, className, iconSize = 'size-10', decor = true }: { src?: string; category: MissionCategory; className?: string; iconSize?: string; decor?: boolean }) {
   const meta = CATEGORY_META[category];
   const Icon = meta.icon;
   if (src) return <img src={src} alt="" loading="lazy" className={cn('object-cover', className)} />;
   return (
     <div className={cn('relative flex items-center justify-center overflow-hidden', className)} style={{ background: meta.gradient }}>
-      <div className="absolute -right-6 -bottom-6 size-28 rounded-full bg-white/15" />
-      <div className="absolute -top-8 -left-4 size-20 rounded-full bg-white/10" />
-      <Icon className={cn('relative text-white/90', iconSize)} strokeWidth={1.6} />
+      {decor && <div className="absolute -right-6 -bottom-6 size-24 rounded-full bg-white/15" />}
+      <Icon className={cn('relative text-white', iconSize)} strokeWidth={1.75} />
     </div>
   );
 }
 
-export function EmptyState({ icon: Icon, title, text, action }: { icon: LucideIcon; title: string; text?: string; action?: ReactNode }) {
+/** Rótulo de categoria (overline colorido com ícone). */
+export function CategoryLabel({ category }: { category: MissionCategory }) {
+  const meta = CATEGORY_META[category];
   return (
-    <div className="flex flex-col items-center px-8 py-12 text-center">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-[24px] bg-secondary">
-        <Icon className="size-7 text-primary" />
-      </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
-      {text && <p className="mt-1 text-sm text-muted">{text}</p>}
-      {action && <div className="mt-5">{action}</div>}
-    </div>
+    <span className={cn('inline-flex items-center gap-1 type-overline', meta.text)}>
+      <meta.icon className="size-3.5" />
+      {meta.label}
+    </span>
   );
 }
 
-export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) {
+/** Metadado pequeno com ícone (distância, visitas…). */
+export function Meta({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
-    <div className="mb-3 flex items-end justify-between px-5">
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      {action}
-    </div>
+    <span className="inline-flex items-center gap-1 type-caption text-muted">
+      <Icon className="size-3.5" />
+      {children}
+    </span>
   );
 }

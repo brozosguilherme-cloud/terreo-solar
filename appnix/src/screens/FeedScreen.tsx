@@ -1,16 +1,16 @@
 import { Heart, MessageCircle, MoreHorizontal, Newspaper, Send, Trash2, Trophy } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { BottomSheet } from '../components/BottomSheet';
 import { PullToRefresh } from '../components/PullToRefresh';
-import { Avatar, Button, EmptyState, LevelBadge, Spinner, Stars, cn } from '../components/ui';
+import { Avatar, Button, EmptyState, LevelBadge, ScreenHeader, Skeleton, Spinner, Stars, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
 import { timeAgo } from '../lib/time';
 import type { FeedComment, FeedEvent } from '../services/types';
 
 export function FeedScreen() {
-  const { backend, setTab, profile } = useApp();
+  const { backend, setTab, profile, openCheckin } = useApp();
   const [events, setEvents] = useState<FeedEvent[] | null>(null);
   const [nonce, setNonce] = useState(0);
 
@@ -23,40 +23,62 @@ export function FeedScreen() {
 
   return (
     <PullToRefresh onRefresh={refresh}>
-      <header className="flex items-center justify-between px-5 pt-safe pb-4">
-        <div>
-          <h1 className="text-[28px] font-bold tracking-tight">Feed</h1>
-          <p className="text-sm text-muted">O que a comunidade está explorando</p>
-        </div>
-        <button onClick={() => setTab('profile')} aria-label="Abrir perfil">
-          <Avatar src={profile?.avatarUrl} name={profile?.name} points={profile?.points ?? 0} size={44} />
-        </button>
-      </header>
-      <FeedList events={events} emptyAction={<Button onClick={() => setTab('checkin')}>Fazer meu primeiro check-in</Button>} />
+      <ScreenHeader
+        title="Feed"
+        subtitle="O que a comunidade está explorando"
+        trailing={
+          <button onClick={() => setTab('profile')} aria-label="Abrir perfil" className="rounded-full">
+            <Avatar src={profile?.avatarUrl} name={profile?.name} points={profile?.points ?? 0} size={40} />
+          </button>
+        }
+      />
+      <div className="px-gutter pb-nav">
+        <FeedList events={events} emptyAction={<Button size="md" onClick={() => openCheckin(null)}>Fazer meu primeiro check-in</Button>} />
+      </div>
     </PullToRefresh>
   );
 }
 
-/** Lista reutilizada no Feed e no Perfil. */
-export function FeedList({ events, emptyAction, compact }: { events: FeedEvent[] | null; emptyAction?: React.ReactNode; compact?: boolean }) {
-  const [commentsFor, setCommentsFor] = useState<FeedEvent | null>(null);
+function PostSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-card bg-surface shadow-card">
+      <div className="flex items-center gap-3 p-card">
+        <Skeleton className="size-10 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-3.5 w-32 rounded-full" />
+          <Skeleton className="h-3 w-24 rounded-full" />
+        </div>
+      </div>
+      <Skeleton className="aspect-[4/3] w-full" />
+      <div className="space-y-2 p-card">
+        <Skeleton className="h-3.5 w-3/4 rounded-full" />
+        <Skeleton className="h-3.5 w-1/2 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+/** Lista reutilizada no Feed e no Perfil (sem padding lateral próprio). */
+export function FeedList({ events, emptyAction }: { events: FeedEvent[] | null; emptyAction?: ReactNode }) {
+  const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
   if (!events)
     return (
-      <div className="flex justify-center py-16">
-        <Spinner className="size-7 text-primary" />
+      <div className="space-y-4">
+        <PostSkeleton />
+        <PostSkeleton />
       </div>
     );
   if (!events.length) return <EmptyState icon={Newspaper} title="Nenhuma publicação ainda" text="Os check-ins aparecem aqui com foto, avaliação e dicas." action={emptyAction} />;
 
   return (
-    <div className={cn('space-y-4', compact ? 'pb-6' : 'px-4 pb-32')}>
+    <div className="space-y-4">
       <AnimatePresence initial={false}>
         {events.map((e) => (
-          <FeedPost key={e.id} event={e} onComments={() => setCommentsFor(e)} />
+          <FeedPost key={e.id} event={e} onComments={() => setCommentsFor(e.id)} />
         ))}
       </AnimatePresence>
-      <CommentsSheet event={commentsFor ? events.find((x) => x.id === commentsFor.id) ?? commentsFor : null} onClose={() => setCommentsFor(null)} />
+      <CommentsSheet event={events.find((x) => x.id === commentsFor) ?? null} onClose={() => setCommentsFor(null)} />
     </div>
   );
 }
@@ -99,32 +121,33 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
   };
 
   return (
-    <motion.article layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} className="overflow-hidden rounded-[28px] bg-white shadow-card">
-      <div className="flex items-center gap-3 p-4 pb-3">
-        <Avatar src={event.userAvatar} name={event.userName} size={42} ring={false} />
+    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} className="overflow-hidden rounded-card bg-surface shadow-card">
+      {/* autor */}
+      <div className="flex items-center gap-3 px-card pt-card pb-3">
+        <Avatar src={event.userAvatar} name={event.userName} size={40} ring={false} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="truncate font-semibold">{event.userName}</span>
+            <span className="truncate type-body-strong">{event.userName}</span>
             {event.userLevel && <LevelBadge level={event.userLevel} />}
           </div>
-          <p className="truncate text-xs text-muted">
+          <p className="truncate type-caption text-muted">
             {event.type === 'mission' ? 'completou uma trilha' : `em ${event.missionTitle}`} · {timeAgo(event.createdAt)}
           </p>
         </div>
         {mine && (
           <div className="relative">
-            <button onClick={() => setMenu((m) => !m)} className="rounded-full p-2 text-muted" aria-label="Opções da publicação">
+            <button onClick={() => setMenu((m) => !m)} className="flex size-9 items-center justify-center rounded-full text-muted transition active:bg-bg" aria-label="Opções da publicação" aria-expanded={menu}>
               <MoreHorizontal className="size-5" />
             </button>
             <AnimatePresence>
               {menu && (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="absolute top-10 right-0 z-10 w-44 overflow-hidden rounded-2xl bg-white shadow-float">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute top-10 right-0 z-10 w-48 overflow-hidden rounded-control bg-surface shadow-float">
                   <button
                     onClick={() => {
                       setMenu(false);
                       setConfirmDelete(true);
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-danger"
+                    className="flex w-full items-center gap-2 px-4 py-3 type-label text-danger-ink"
                   >
                     <Trash2 className="size-4" /> Excluir publicação
                   </button>
@@ -135,44 +158,46 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
         )}
       </div>
 
+      {/* mídia */}
       {event.type === 'mission' ? (
-        <div className="mx-4 flex items-center gap-4 rounded-[22px] bg-ink p-5 text-white">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-accent">
-            <Trophy className="size-7 text-ink" />
+        <div className="mx-card flex items-center gap-4 rounded-control bg-ink p-4 text-white">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-control bg-accent">
+            <Trophy className="size-6 text-ink" />
           </div>
-          <div>
-            <p className="text-xs tracking-wide text-white/60 uppercase">Trilha concluída</p>
-            <p className="font-display text-lg font-semibold">{event.missionTitle}</p>
+          <div className="min-w-0">
+            <p className="type-overline text-white/60">Trilha concluída</p>
+            <p className="truncate type-title3">{event.missionTitle}</p>
           </div>
         </div>
       ) : (
         event.imageUrl && <img src={event.imageUrl} alt={`Foto em ${event.missionTitle}`} className="aspect-[4/3] w-full object-cover" loading="lazy" onDoubleClick={() => !liked && kudos()} />
       )}
 
-      <div className="px-4 pt-3 pb-4">
+      {/* conteúdo */}
+      <div className="px-card pt-3 pb-card">
         {event.type === 'checkin' && (
-          <div className="mb-2 flex items-center justify-between">
-            <span className="font-display font-semibold">{event.missionTitle}</span>
+          <div className="flex items-center justify-between gap-3">
+            <span className="truncate type-title3">{event.missionTitle}</span>
             {event.rating ? <Stars value={event.rating} size={14} /> : null}
           </div>
         )}
-        {event.content && <p className={cn('text-[15px] leading-relaxed', event.type === 'mission' ? 'mt-3 text-muted' : '')}>{event.content}</p>}
+        {event.content && <p className={cn('type-body', event.type === 'checkin' ? 'mt-1' : 'text-muted')}>{event.content}</p>}
 
         <div className="mt-3 flex items-center gap-2">
           <motion.button
-            whileTap={{ scale: 0.85 }}
+            whileTap={{ scale: 0.9 }}
             onClick={kudos}
-            className={cn('flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors', liked ? 'bg-[#FDE8E2] text-[#E5484D]' : 'bg-bg text-ink')}
+            className={cn('flex h-9 items-center gap-1.5 rounded-full px-3.5 type-label transition-colors', liked ? 'bg-danger-soft text-danger' : 'bg-bg text-ink')}
             aria-pressed={liked}
-            aria-label="Kudos"
+            aria-label={`Kudos, ${count}`}
           >
             <motion.span key={String(liked)} initial={{ scale: liked ? 0.4 : 1 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 12 }}>
-              <Heart className={cn('size-5', liked && 'fill-current')} />
+              <Heart className={cn('size-4.5', liked && 'fill-current')} />
             </motion.span>
-            {count}
+            <span className="type-number">{count}</span>
           </motion.button>
-          <button onClick={onComments} className="flex h-10 items-center gap-2 rounded-full bg-bg px-4 text-sm font-semibold" aria-label="Comentários">
-            <MessageCircle className="size-5" /> {event.commentsCount}
+          <button onClick={onComments} className="flex h-9 items-center gap-1.5 rounded-full bg-bg px-3.5 type-label" aria-label={`Comentários, ${event.commentsCount}`}>
+            <MessageCircle className="size-4.5" /> <span className="type-number">{event.commentsCount}</span>
           </button>
         </div>
       </div>
@@ -192,7 +217,7 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
           </div>
         }
       >
-        <p className="px-6 pb-4 text-muted">A publicação e seus comentários serão removidos do feed. Seus pontos continuam na conta.</p>
+        <p className="px-gutter pb-6 type-body text-muted">A publicação e os comentários serão removidos do feed. Seus pontos continuam na conta.</p>
       </BottomSheet>
     </motion.article>
   );
@@ -235,7 +260,7 @@ function CommentsSheet({ event, onClose }: { event: FeedEvent | null; onClose: (
     <BottomSheet
       open={!!event}
       onClose={onClose}
-      title={`Comentários${event ? ` (${event.commentsCount})` : ''}`}
+      title={`Comentários${event ? ` · ${event.commentsCount}` : ''}`}
       maxHeight="80%"
       footer={
         <form
@@ -245,38 +270,38 @@ function CommentsSheet({ event, onClose }: { event: FeedEvent | null; onClose: (
           }}
           className="flex items-center gap-2"
         >
-          <Avatar src={profile?.avatarUrl} name={profile?.name} size={36} ring={false} />
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={500}
             placeholder="Escreva um comentário…"
-            className="h-11 min-w-0 flex-1 rounded-full border border-line bg-bg px-4 text-sm outline-none focus:border-primary"
+            aria-label="Comentário"
+            className="h-11 min-w-0 flex-1 rounded-full border border-line bg-bg px-4 type-callout outline-none focus:border-primary"
           />
-          <button type="submit" disabled={!text.trim() || sending} className="flex size-11 items-center justify-center rounded-full bg-primary text-white disabled:opacity-40" aria-label="Enviar comentário">
+          <button type="submit" disabled={!text.trim() || sending} className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-white transition active:scale-95 disabled:opacity-40" aria-label="Enviar comentário">
             {sending ? <Spinner className="size-4" /> : <Send className="size-4" />}
           </button>
         </form>
       }
     >
-      <div className="min-h-40 px-5 pb-4">
+      <div className="min-h-40 px-gutter pb-4">
         {!comments ? (
           <div className="flex justify-center py-10">
             <Spinner className="text-primary" />
           </div>
         ) : comments.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted">Seja o primeiro a comentar.</p>
+          <p className="py-10 text-center type-callout text-muted">Seja o primeiro a comentar.</p>
         ) : (
           <ul className="space-y-4">
             {comments.map((c) => (
               <motion.li key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-                <Avatar src={c.userAvatar} name={c.userName} size={36} ring={false} />
+                <Avatar src={c.userAvatar} name={c.userName} size={32} ring={false} />
                 <div className="min-w-0 flex-1">
-                  <div className="rounded-2xl rounded-tl-md bg-bg px-3.5 py-2.5">
-                    <p className="text-sm font-semibold">{c.userName}</p>
-                    <p className="text-sm break-words">{c.text}</p>
+                  <div className="rounded-control rounded-tl-md bg-bg px-3.5 py-2.5">
+                    <p className="type-label">{c.userName}</p>
+                    <p className="type-callout break-words">{c.text}</p>
                   </div>
-                  <p className="mt-1 pl-2 text-[11px] text-muted">{timeAgo(c.createdAt)}</p>
+                  <p className="mt-1 pl-2 type-caption text-muted">{timeAgo(c.createdAt)}</p>
                 </div>
               </motion.li>
             ))}

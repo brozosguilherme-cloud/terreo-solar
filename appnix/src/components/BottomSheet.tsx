@@ -45,7 +45,7 @@ export function BottomSheet({ open, onClose, title, children, maxHeight = '88%',
           <motion.div
             role="dialog"
             aria-modal="true"
-            className={cn('absolute inset-x-0 bottom-0 flex flex-col rounded-t-[32px] bg-white shadow-float', className)}
+            className={cn('absolute inset-x-0 bottom-0 flex flex-col rounded-t-sheet bg-surface shadow-float', className)}
             style={{ maxHeight }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -59,15 +59,15 @@ export function BottomSheet({ open, onClose, title, children, maxHeight = '88%',
             onDragEnd={onDragEnd}
           >
             <div className="flex shrink-0 cursor-grab touch-none justify-center pt-3 pb-2 active:cursor-grabbing" onPointerDown={(e) => drag.start(e)}>
-              <div className="h-1.5 w-11 rounded-full bg-line" />
+              <div className="h-1 w-10 rounded-full bg-line" />
             </div>
             {title && (
-              <div className="shrink-0 touch-none px-6 pb-3" onPointerDown={(e) => drag.start(e)}>
-                {typeof title === 'string' ? <h2 className="text-xl font-semibold">{title}</h2> : title}
+              <div className="shrink-0 touch-none px-gutter pb-4" onPointerDown={(e) => drag.start(e)}>
+                {typeof title === 'string' ? <h2 className="type-title2">{title}</h2> : title}
               </div>
             )}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
-            {footer && <div className="shrink-0 border-t border-line/60 px-5 pt-3 pb-safe">{footer}</div>}
+            {footer && <div className="shrink-0 border-t border-line-soft px-gutter pt-3 pb-safe">{footer}</div>}
           </motion.div>
         </div>
       )}

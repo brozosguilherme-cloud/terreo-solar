@@ -56,13 +56,13 @@ export const LEGAL_DOCS: Record<LegalDoc, { title: string; icon: LucideIcon; sec
 export function LegalContent({ doc }: { doc: LegalDoc }) {
   const d = LEGAL_DOCS[doc];
   return (
-    <article className="px-6 pb-8 text-[15px] leading-relaxed text-ink/90">
-      <p className="mb-5 text-xs text-muted">Última atualização: {UPDATED}</p>
+    <article className="px-gutter pb-8">
+      <p className="mb-5 type-caption text-muted">Última atualização: {UPDATED}</p>
       {d.sections.map((s) => (
-        <section key={s.h} className="mb-5">
-          <h3 className="mb-1.5 text-base font-semibold text-ink">{s.h}</h3>
+        <section key={s.h} className="mb-6">
+          <h3 className="mb-2 type-title3">{s.h}</h3>
           {s.p.map((p, i) => (
-            <p key={i} className="mb-1.5 text-muted">
+            <p key={i} className="mb-2 type-body text-muted">
               {p}
             </p>
           ))}
@@ -83,10 +83,10 @@ export function LegalScreen({ doc, onClose }: { doc: LegalDoc | null; onClose: (
       maxHeight="92%"
       title={
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-secondary">
+          <div className="flex size-10 items-center justify-center rounded-control bg-secondary">
             <Icon className="size-5 text-primary" />
           </div>
-          <h2 className="text-xl font-semibold">{d?.title}</h2>
+          <h2 className="type-title2">{d?.title}</h2>
         </div>
       }
       footer={

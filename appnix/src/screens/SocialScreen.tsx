@@ -1,8 +1,8 @@
 import { Check, Crown, Search, Trophy, UserCheck, UserMinus, UserPlus, Users, X } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { PullToRefresh } from '../components/PullToRefresh';
-import { Avatar, EmptyState, LevelBadge, Spinner, cn } from '../components/ui';
+import { Avatar, Button, Card, EmptyState, LevelBadge, ScreenHeader, Segmented, Skeleton, Spinner, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
 import { getUserLevelInfo } from '../lib/levels';
@@ -10,10 +10,11 @@ import { formatPoints } from '../lib/time';
 import type { Friendship, RankingEntry } from '../services/types';
 
 type SocialTab = 'ranking' | 'friends';
+type Period = 'weekly' | 'all';
 
 export function SocialScreen() {
   const [tab, setTab] = useState<SocialTab>('ranking');
-  const [period, setPeriod] = useState<'weekly' | 'all'>('weekly');
+  const [period, setPeriod] = useState<Period>('weekly');
   const [ranking, setRanking] = useState<RankingEntry[] | null>(null);
   const { backend, toast } = useApp();
 
@@ -33,106 +34,145 @@ export function SocialScreen() {
 
   return (
     <PullToRefresh onRefresh={loadRanking}>
-      <header className="px-5 pt-safe pb-4">
-        <h1 className="text-[28px] font-bold tracking-tight">Comunidade</h1>
-        <p className="text-sm text-muted">Dispute o topo com outros exploradores</p>
-      </header>
-
-      <div className="relative mx-5 mb-5 grid grid-cols-2 rounded-2xl bg-[#F1ECE6] p-1" role="tablist">
-        {(['ranking', 'friends'] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={cn('relative flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold', tab === t ? 'text-ink' : 'text-muted')}>
-            {tab === t && <motion.div layoutId="social-tab" className="absolute inset-0 rounded-xl bg-white shadow-card" />}
-            <span className="relative flex items-center gap-1.5">
-              {t === 'ranking' ? <Trophy className="size-4" /> : <Users className="size-4" />}
-              {t === 'ranking' ? 'Ranking' : 'Amigos'}
-            </span>
-          </button>
-        ))}
+      <ScreenHeader title="Comunidade" subtitle="Dispute o topo com outros exploradores" />
+      <div className="px-gutter">
+        <Segmented
+          id="social"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'ranking', label: 'Ranking', icon: Trophy },
+            { value: 'friends', label: 'Amigos', icon: Users },
+          ]}
+        />
       </div>
-
-      {tab === 'ranking' ? <Ranking ranking={ranking} period={period} setPeriod={setPeriod} /> : <Friends />}
+      <div className="mt-6 pb-nav">{tab === 'ranking' ? <Ranking ranking={ranking} period={period} setPeriod={setPeriod} /> : <Friends />}</div>
     </PullToRefresh>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Ranking                                                              */
+/* ------------------------------------------------------------------ */
+
 const PODIUM = [
-  { place: 2, color: '#C0C7D0', bg: 'linear-gradient(180deg,#EEF1F4,#D9DEE4)', h: 'h-24', label: 'Prata' },
-  { place: 1, color: '#FFD166', bg: 'linear-gradient(180deg,#FFF1C7,#FFD166)', h: 'h-32', label: 'Ouro' },
-  { place: 3, color: '#D79A6B', bg: 'linear-gradient(180deg,#F8E2D1,#E4B48E)', h: 'h-20', label: 'Bronze' },
+  { place: 2, ring: 'bg-silver', block: 'from-[#EEF1F4] to-[#D9DEE4]', h: 'h-20', label: 'Prata', size: 64 as const },
+  { place: 1, ring: 'bg-gold', block: 'from-[#FFF1C7] to-[#FFD166]', h: 'h-28', label: 'Ouro', size: 64 as const },
+  { place: 3, ring: 'bg-bronze', block: 'from-[#F8E2D1] to-[#E4B48E]', h: 'h-16', label: 'Bronze', size: 64 as const },
 ];
 
-function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | null; period: 'weekly' | 'all'; setPeriod: (p: 'weekly' | 'all') => void }) {
+function RankRow({ pos, entry, highlight, trailing }: { pos: number; entry: RankingEntry; highlight?: boolean; trailing?: ReactNode }) {
+  return (
+    <div className={cn('flex items-center gap-3 rounded-card bg-surface p-3 shadow-card', highlight && 'ring-2 ring-primary')}>
+      <span className="w-6 text-center type-label type-number text-muted">{pos}</span>
+      <Avatar src={entry.avatarUrl} name={entry.name} size={40} ring={false} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate type-body-strong">{highlight ? `${entry.name} (você)` : entry.name}</p>
+        <LevelBadge level={entry.level} />
+      </div>
+      {trailing ?? (
+        <span className="type-body-strong type-number">
+          {formatPoints(entry.points)} <span className="type-caption text-muted">pts</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | null; period: Period; setPeriod: (p: Period) => void }) {
   const { profile } = useApp();
   const myPos = useMemo(() => (ranking && profile ? ranking.findIndex((r) => r.userId === profile.id) : -1), [ranking, profile]);
+  const VISIBLE = 20;
 
   return (
-    <div className="pb-32">
-      <div className="mb-4 flex justify-center gap-2">
-        {(['weekly', 'all'] as const).map((p) => (
-          <button key={p} onClick={() => setPeriod(p)} className={cn('rounded-full px-4 py-2 text-sm font-semibold', period === p ? 'bg-ink text-white' : 'bg-white text-muted shadow-card')}>
-            {p === 'weekly' ? 'Esta semana' : 'Geral'}
-          </button>
-        ))}
-      </div>
+    <div className="px-gutter">
+      <Segmented
+        id="period"
+        value={period}
+        onChange={setPeriod}
+        className="mx-auto w-56"
+        options={[
+          { value: 'weekly', label: 'Semana' },
+          { value: 'all', label: 'Geral' },
+        ]}
+      />
 
       {!ranking ? (
-        <div className="flex justify-center py-16">
-          <Spinner className="size-7 text-primary" />
+        <div className="mt-5 space-y-3">
+          <Skeleton className="h-64 w-full rounded-sheet" />
+          <Skeleton className="h-16 w-full rounded-card" />
+          <Skeleton className="h-16 w-full rounded-card" />
         </div>
       ) : ranking.length === 0 ? (
         <EmptyState icon={Trophy} title="Ranking vazio" text={period === 'weekly' ? 'Ninguém fez check-in esta semana. Seja o primeiro!' : 'Faça check-ins para aparecer aqui.'} />
       ) : (
         <>
           {/* Pódio */}
-          <div className="mx-5 mb-5 flex items-end justify-center gap-3 rounded-[32px] bg-secondary px-3 pt-8">
-            {PODIUM.map(({ place, color, bg, h, label }) => {
+          <div className="mt-5 flex items-end gap-2 overflow-hidden rounded-sheet bg-secondary px-3 pt-8">
+            {PODIUM.map(({ place, ring, block, h, label, size }) => {
               const r = ranking[place - 1];
               if (!r) return <div key={place} className="flex-1" />;
+              const isMe = r.userId === profile?.id;
               return (
-                <motion.div key={place} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: place * 0.08 }} className="flex flex-1 flex-col items-center">
-                  {place === 1 && <Crown className="mb-1 size-7 fill-accent text-[#E9A34D]" />}
-                  <div className="rounded-full p-1" style={{ background: color }}>
-                    <Avatar src={r.avatarUrl} name={r.name} size={place === 1 ? 72 : 58} ring={false} />
+                <motion.div key={place} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: place * 0.08 }} className="flex min-w-0 flex-1 flex-col items-center">
+                  <div className="h-7">{place === 1 && <Crown className="size-7 fill-accent text-primary" />}</div>
+                  <div className={cn('rounded-full p-1', ring)}>
+                    <Avatar src={r.avatarUrl} name={r.name} size={size} ring={false} />
                   </div>
-                  <p className="mt-2 w-full truncate text-center text-sm font-semibold">{r.name.split(' ')[0]}</p>
-                  <p className="text-xs font-bold text-primary-dark">{formatPoints(r.points)} pts</p>
-                  <div className={cn('mt-2 flex w-full flex-col items-center justify-start rounded-t-[20px] pt-3', h)} style={{ background: bg }}>
-                    <span className="font-display text-3xl font-bold text-ink/80">{place}</span>
-                    <span className="text-[10px] font-semibold tracking-wide text-ink/60 uppercase">{label}</span>
+                  <p className="mt-2 w-full truncate text-center type-label">{isMe ? 'Você' : r.name.split(' ')[0]}</p>
+                  <p className="type-caption type-number text-primary-strong">{formatPoints(r.points)} pts</p>
+                  <div className={cn('mt-2 flex w-full flex-col items-center rounded-t-card bg-gradient-to-b pt-2', block, h)}>
+                    <span className="type-title2 type-number">{place}</span>
+                    <span className="type-overline text-ink/60">{label}</span>
                   </div>
                 </motion.div>
               );
             })}
           </div>
 
-          {/* posição própria fixada quando fica fora do top 10 visível */}
-          {myPos >= 10 && (
-            <div className="mx-5 mb-4 flex items-center gap-3 rounded-[24px] bg-ink p-3 text-white">
-              <span className="w-8 text-center font-display text-lg font-bold text-accent">{myPos + 1}º</span>
-              <Avatar src={profile?.avatarUrl} name={profile?.name} size={40} ring={false} />
-              <div className="flex-1">
-                <p className="font-semibold">Você</p>
-                <p className="text-xs text-white/60">{getUserLevelInfo(profile?.points ?? 0).title}</p>
-              </div>
-              <span className="font-bold text-accent">{formatPoints(ranking[myPos].points)}</span>
-            </div>
-          )}
-
-          <ul className="space-y-2 px-5">
-            {ranking.slice(3).map((r, i) => (
-              <motion.li key={r.userId} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i, 10) * 0.03 }} className={cn('flex items-center gap-3 rounded-[22px] bg-white p-3 shadow-card', r.userId === profile?.id && 'ring-2 ring-primary')}>
-                <span className="w-7 text-center font-display font-bold text-muted">{i + 4}</span>
-                <Avatar src={r.avatarUrl} name={r.name} size={42} ring={false} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{r.name}</p>
-                  <LevelBadge level={r.level} />
-                </div>
-                <span className="font-semibold">{formatPoints(r.points)}</span>
+          <ul className="mt-4 space-y-2">
+            {ranking.slice(3, VISIBLE).map((r, i) => (
+              <motion.li key={r.userId} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i, 10) * 0.03 }}>
+                <RankRow pos={i + 4} entry={r} highlight={r.userId === profile?.id} />
               </motion.li>
             ))}
           </ul>
+
+          {/* posição própria fixada quando fica fora da lista visível */}
+          {myPos >= VISIBLE && (
+            <div className="mt-4">
+              <p className="mb-2 type-caption text-muted">Sua posição</p>
+              <RankRow pos={myPos + 1} entry={ranking[myPos]} highlight />
+            </div>
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Amigos                                                               */
+/* ------------------------------------------------------------------ */
+
+function GroupTitle({ children, count }: { children: ReactNode; count?: number }) {
+  return (
+    <h2 className="mb-3 flex items-center gap-2 type-title3">
+      {children}
+      {count != null && count > 0 && <span className="rounded-full bg-primary px-2 type-caption font-semibold text-white">{count}</span>}
+    </h2>
+  );
+}
+
+function PersonRow({ avatar, name, subtitle, children, tone = 'default' }: { avatar?: string; name: string; subtitle?: string; children?: ReactNode; tone?: 'default' | 'brand' }) {
+  return (
+    <div className={cn('flex items-center gap-3 rounded-card p-3', tone === 'brand' ? 'bg-secondary' : 'bg-surface shadow-card')}>
+      <Avatar src={avatar} name={name} size={40} ring={false} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate type-body-strong">{name}</p>
+        {subtitle && <p className="truncate type-caption text-muted">{subtitle}</p>}
+      </div>
+      {children}
     </div>
   );
 }
@@ -169,7 +209,7 @@ function Friends() {
   const outgoing = (friendships ?? []).filter((f) => f.status === 'pending' && f.requesterId === profile.id);
   const friends = (friendships ?? []).filter((f) => f.status === 'accepted');
   const other = (f: Friendship) =>
-    f.requesterId === profile.id ? { id: f.targetId, name: f.targetName, avatar: f.targetAvatar } : { id: f.requesterId, name: f.requesterName, avatar: f.requesterAvatar };
+    f.requesterId === profile.id ? { name: f.targetName, avatar: f.targetAvatar } : { name: f.requesterName, avatar: f.requesterAvatar };
   const relation = (userId: string) => friendships?.find((f) => f.users.includes(userId));
 
   const act = async (key: string, fn: () => Promise<void>, ok?: string) => {
@@ -185,112 +225,101 @@ function Friends() {
   };
 
   return (
-    <div className="space-y-6 px-5 pb-32">
-      <label className="flex h-12 items-center gap-3 rounded-2xl border border-line bg-white px-4 focus-within:border-primary">
-        <Search className="size-5 text-muted" />
-        <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Buscar exploradores pelo nome" className="h-full flex-1 bg-transparent text-sm outline-none" />
-        {searching && <Spinner className="size-4 text-primary" />}
-      </label>
+    <div className="space-y-section px-gutter">
+      <div>
+        <label className="flex h-13 items-center gap-3 rounded-control border border-line bg-surface px-4 transition focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15">
+          <Search className="size-5 text-muted" />
+          <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Buscar exploradores pelo nome" className="h-full min-w-0 flex-1 bg-transparent type-body outline-none" />
+          {searching && <Spinner className="size-4 text-primary" />}
+        </label>
 
-      {term.trim().length >= 2 && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-muted">Resultados</h2>
-          {results.length === 0 && !searching ? (
-            <p className="py-4 text-center text-sm text-muted">Ninguém encontrado com “{term}”.</p>
-          ) : (
-            <ul className="space-y-2">
-              {results.map((r) => {
+        {term.trim().length >= 2 && (
+          <div className="mt-3 space-y-2">
+            {results.length === 0 && !searching ? (
+              <p className="py-4 text-center type-callout text-muted">Ninguém encontrado com “{term}”.</p>
+            ) : (
+              results.map((r) => {
                 const rel = relation(r.userId);
                 return (
-                  <li key={r.userId} className="flex items-center gap-3 rounded-[22px] bg-white p-3 shadow-card">
-                    <Avatar src={r.avatarUrl} name={r.name} points={r.points} size={44} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{r.name}</p>
-                      <p className="text-xs text-muted">{getUserLevelInfo(r.points).title}</p>
-                    </div>
+                  <PersonRow key={r.userId} avatar={r.avatarUrl} name={r.name} subtitle={getUserLevelInfo(r.points).title}>
                     {rel ? (
-                      <span className="flex items-center gap-1 rounded-full bg-bg px-3 py-2 text-xs font-semibold text-muted">
+                      <span className="inline-flex h-9 items-center gap-1.5 rounded-full bg-surface-muted px-3.5 type-caption font-semibold text-muted">
                         <UserCheck className="size-4" /> {rel.status === 'accepted' ? 'Amigos' : 'Pendente'}
                       </span>
                     ) : (
-                      <button
-                        disabled={busy === r.userId}
-                        onClick={() => act(r.userId, () => backend.sendFriendRequest(profile, r), 'Solicitação enviada!')}
-                        className="flex items-center gap-1 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                      >
-                        <UserPlus className="size-4" /> Adicionar
-                      </button>
+                      <Button size="sm" loading={busy === r.userId} onClick={() => act(r.userId, () => backend.sendFriendRequest(profile, r), 'Solicitação enviada!')}>
+                        <UserPlus /> Adicionar
+                      </Button>
                     )}
-                  </li>
+                  </PersonRow>
                 );
-              })}
-            </ul>
-          )}
-        </section>
-      )}
+              })
+            )}
+          </div>
+        )}
+      </div>
 
       {incoming.length > 0 && (
         <section>
-          <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted">
-            Solicitações <span className="rounded-full bg-primary px-2 text-xs text-white">{incoming.length}</span>
-          </h2>
-          <ul className="space-y-2">
+          <GroupTitle count={incoming.length}>Solicitações</GroupTitle>
+          <div className="space-y-2">
             {incoming.map((f) => (
-              <motion.li layout key={f.id} className="flex items-center gap-3 rounded-[22px] bg-secondary p-3">
-                <Avatar src={f.requesterAvatar} name={f.requesterName} size={44} ring={false} />
-                <p className="min-w-0 flex-1 truncate font-semibold">{f.requesterName}</p>
-                <button disabled={!!busy} onClick={() => act(f.id, () => backend.respondFriendRequest(f, false))} className="flex size-10 items-center justify-center rounded-full bg-white text-muted" aria-label="Recusar">
-                  <X className="size-5" />
-                </button>
-                <button disabled={!!busy} onClick={() => act(f.id, () => backend.respondFriendRequest(f, true), 'Agora vocês são amigos!')} className="flex size-10 items-center justify-center rounded-full bg-success text-white" aria-label="Aceitar">
-                  <Check className="size-5" />
-                </button>
-              </motion.li>
+              <motion.div layout key={f.id}>
+                <PersonRow avatar={f.requesterAvatar} name={f.requesterName} subtitle="quer ser seu amigo" tone="brand">
+                  <button disabled={!!busy} onClick={() => act(f.id, () => backend.respondFriendRequest(f, false))} className="flex size-10 items-center justify-center rounded-full bg-surface text-muted transition active:scale-95" aria-label={`Recusar ${f.requesterName}`}>
+                    <X className="size-5" />
+                  </button>
+                  <button disabled={!!busy} onClick={() => act(f.id, () => backend.respondFriendRequest(f, true), 'Agora vocês são amigos!')} className="flex size-10 items-center justify-center rounded-full bg-success text-white transition active:scale-95" aria-label={`Aceitar ${f.requesterName}`}>
+                    <Check className="size-5" />
+                  </button>
+                </PersonRow>
+              </motion.div>
             ))}
-          </ul>
+          </div>
         </section>
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-muted">Amigos ({friends.length})</h2>
+        <GroupTitle>Amigos{friendships ? ` · ${friends.length}` : ''}</GroupTitle>
         {!friendships ? (
-          <div className="flex justify-center py-8">
-            <Spinner className="text-primary" />
+          <div className="space-y-2">
+            <Skeleton className="h-16 w-full rounded-card" />
+            <Skeleton className="h-16 w-full rounded-card" />
           </div>
         ) : friends.length === 0 ? (
-          <EmptyState icon={Users} title="Explore em grupo" text="Busque outros exploradores pelo nome e envie solicitações de amizade." />
+          <Card>
+            <EmptyState icon={Users} title="Explore em grupo" text="Busque exploradores pelo nome e envie solicitações de amizade." />
+          </Card>
         ) : (
-          <ul className="space-y-2">
+          <div className="space-y-2">
             {friends.map((f) => {
               const o = other(f);
               return (
-                <motion.li layout key={f.id} className="flex items-center gap-3 rounded-[22px] bg-white p-3 shadow-card">
-                  <Avatar src={o.avatar} name={o.name} size={44} ring={false} />
-                  <p className="min-w-0 flex-1 truncate font-semibold">{o.name}</p>
-                  <button disabled={!!busy} onClick={() => act(f.id, () => backend.removeFriend(f))} className="rounded-full p-2 text-muted" aria-label={`Remover ${o.name}`}>
-                    <UserMinus className="size-5" />
-                  </button>
-                </motion.li>
+                <motion.div layout key={f.id}>
+                  <PersonRow avatar={o.avatar} name={o.name}>
+                    <button disabled={!!busy} onClick={() => act(f.id, () => backend.removeFriend(f))} className="flex size-10 items-center justify-center rounded-full text-muted transition active:bg-bg" aria-label={`Remover ${o.name}`}>
+                      <UserMinus className="size-5" />
+                    </button>
+                  </PersonRow>
+                </motion.div>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
 
       {outgoing.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-muted">Enviadas</h2>
-          <ul className="space-y-2">
+          <GroupTitle>Enviadas</GroupTitle>
+          <div className="space-y-2">
             {outgoing.map((f) => (
-              <li key={f.id} className="flex items-center gap-3 rounded-[22px] bg-white/60 p-3">
-                <Avatar src={f.targetAvatar} name={f.targetName} size={40} ring={false} />
-                <p className="min-w-0 flex-1 truncate text-sm font-medium">{f.targetName}</p>
-                <button onClick={() => act(f.id, () => backend.removeFriend(f))} className="text-xs font-semibold text-muted underline">
+              <PersonRow key={f.id} avatar={f.targetAvatar} name={f.targetName} subtitle="aguardando resposta">
+                <Button size="sm" variant="ghost" onClick={() => act(f.id, () => backend.removeFriend(f))}>
                   Cancelar
-                </button>
-              </li>
+                </Button>
+              </PersonRow>
             ))}
-          </ul>
+          </div>
         </section>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { Compass, Eye, EyeOff, Lock, Mail, MailCheck, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { Button, cn } from '../components/ui';
+import { Button, Segmented, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
 import { LegalScreen, type LegalDoc } from './LegalScreen';
@@ -13,14 +13,14 @@ function Field({ icon, error, children }: { icon: ReactNode; error?: string; chi
     <div>
       <label
         className={cn(
-          'flex h-14 items-center gap-3 rounded-2xl border bg-white px-4 transition focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15',
+          'flex h-13 items-center gap-3 rounded-control border bg-surface px-4 transition focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15',
           error ? 'border-danger' : 'border-line',
         )}
       >
         <span className="text-muted">{icon}</span>
         {children}
       </label>
-      {error && <p className="mt-1 pl-1 text-xs text-danger">{error}</p>}
+      {error && <p className="mt-1 pl-1 type-caption text-danger-ink">{error}</p>}
     </div>
   );
 }
@@ -99,58 +99,54 @@ export function LoginScreen() {
 
   return (
     <div className="h-full overflow-y-auto bg-bg no-scrollbar">
-      <div className="relative overflow-hidden rounded-b-[40px] bg-secondary px-6 pt-safe pb-10">
+      <div className="relative overflow-hidden rounded-b-sheet bg-secondary px-gutter pt-safe pb-8">
         <div className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/15" />
         <div className="absolute top-24 -left-10 size-24 rounded-full bg-accent/30" />
-        <div className="relative mt-10 flex items-center gap-2">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary">
+        <div className="relative mt-6 flex items-center gap-2">
+          <div className="flex size-10 items-center justify-center rounded-control bg-primary">
             <Compass className="size-6 text-white" />
           </div>
-          <span className="font-display text-2xl font-bold">
+          <span className="type-title2">
             App<span className="text-primary">Nix</span>
           </span>
         </div>
-        <h1 className="relative mt-8 text-[32px] leading-tight font-bold tracking-tight">
+        <h1 className="relative mt-8 type-display">
           {mode === 'login' ? 'Bem-vindo de volta, explorador.' : 'Sua cidade virou um jogo.'}
         </h1>
-        <p className="relative mt-2 text-muted">Visite lugares reais, faça check-in e acumule pontos.</p>
+        <p className="relative mt-2 type-body text-muted">Visite lugares reais, faça check-in e acumule pontos.</p>
       </div>
 
-      <div className="px-6 pt-6 pb-8">
-        <div className="relative mb-6 grid grid-cols-2 rounded-2xl bg-[#F1ECE6] p-1" role="tablist">
-          {(['login', 'signup'] as const).map((m) => (
-            <button
-              key={m}
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => {
-                setMode(m);
-                setErrors({});
-              }}
-              className={cn('relative h-11 rounded-xl text-sm font-semibold transition-colors', mode === m ? 'text-ink' : 'text-muted')}
-            >
-              {mode === m && <motion.div layoutId="auth-tab" className="absolute inset-0 rounded-xl bg-white shadow-card" />}
-              <span className="relative">{m === 'login' ? 'Entrar' : 'Cadastrar'}</span>
-            </button>
-          ))}
-        </div>
+      <div className="px-gutter pt-6 pb-8">
+        <Segmented
+          id="auth"
+          value={mode}
+          onChange={(m) => {
+            setMode(m);
+            setErrors({});
+          }}
+          className="mb-6"
+          options={[
+            { value: 'login', label: 'Entrar' },
+            { value: 'signup', label: 'Cadastrar' },
+          ]}
+        />
 
         <form onSubmit={submit} className="space-y-3" noValidate>
           <AnimatePresence initial={false}>
             {mode === 'signup' && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                 <Field icon={<User className="size-5" />} error={errors.name}>
-                  <input className="h-full flex-1 bg-transparent outline-none placeholder:text-muted" placeholder="Seu nome" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+                  <input className="h-full min-w-0 flex-1 bg-transparent type-body outline-none" placeholder="Seu nome" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
                 </Field>
               </motion.div>
             )}
           </AnimatePresence>
           <Field icon={<Mail className="size-5" />} error={errors.email}>
-            <input className="h-full flex-1 bg-transparent outline-none placeholder:text-muted" type="email" inputMode="email" placeholder="seu@email.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input className="h-full min-w-0 flex-1 bg-transparent type-body outline-none" type="email" inputMode="email" placeholder="seu@email.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           <Field icon={<Lock className="size-5" />} error={errors.password}>
             <input
-              className="h-full flex-1 bg-transparent outline-none placeholder:text-muted"
+              className="h-full min-w-0 flex-1 bg-transparent type-body outline-none"
               type={showPw ? 'text' : 'password'}
               placeholder="Senha"
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -164,21 +160,21 @@ export function LoginScreen() {
 
           {mode === 'login' ? (
             <div className="flex justify-end">
-              <button type="button" onClick={forgot} className="text-sm font-medium text-primary-dark">
+              <button type="button" onClick={forgot} className="type-label text-primary-strong">
                 Esqueci minha senha
               </button>
             </div>
           ) : (
             <div>
-              <label className="flex items-start gap-3 pt-1 text-sm text-muted">
-                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#E9A34D]" />
+              <label className="flex items-start gap-3 pt-1 type-callout text-muted">
+                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--color-primary)]" />
                 <span>
                   Li e aceito os{' '}
                   <button type="button" className="font-semibold text-ink underline" onClick={() => setLegal('terms')}>Termos de Uso</button> e a{' '}
                   <button type="button" className="font-semibold text-ink underline" onClick={() => setLegal('privacy')}>Política de Privacidade</button>.
                 </span>
               </label>
-              {errors.terms && <p className="mt-1 pl-8 text-xs text-danger">{errors.terms}</p>}
+              {errors.terms && <p className="mt-1 pl-8 type-caption text-danger-ink">{errors.terms}</p>}
             </div>
           )}
 
@@ -187,21 +183,21 @@ export function LoginScreen() {
           </Button>
         </form>
 
-        <div className="my-6 flex items-center gap-3 text-xs text-muted">
-          <div className="h-px flex-1 bg-line" /> ou <div className="h-px flex-1 bg-line" />
+        <div className="my-6 flex items-center gap-3 type-caption text-muted">
+          <div className="h-px flex-1 bg-line-soft" /> ou <div className="h-px flex-1 bg-line-soft" />
         </div>
 
-        <Button variant="secondary" className="w-full border-line bg-white" onClick={google} loading={loading === 'google'} disabled={!!loading}>
+        <Button variant="secondary" className="w-full" onClick={google} loading={loading === 'google'} disabled={!!loading}>
           <GoogleIcon /> Continuar com Google
         </Button>
 
         {backend.mode === 'demo' && (
-          <p className="mt-4 rounded-2xl bg-accent/25 px-4 py-3 text-xs text-ink/80">
+          <p className="mt-4 rounded-control bg-accent/25 px-4 py-3 type-caption text-ink">
             <strong>Modo demonstração:</strong> Firebase não configurado. Os dados ficam salvos apenas neste dispositivo.
           </p>
         )}
 
-        <footer className="mt-8 text-center text-xs leading-relaxed text-muted">
+        <footer className="mt-8 text-center type-caption text-muted">
           Ao continuar, você concorda com nossos{' '}
           <button className="underline" onClick={() => setLegal('terms')}>Termos de Serviço</button>,{' '}
           <button className="underline" onClick={() => setLegal('privacy')}>Política de Privacidade</button> e{' '}
@@ -245,11 +241,11 @@ export function VerifyEmailScreen() {
 
   return (
     <div className="flex h-full flex-col items-center justify-center bg-bg px-8 text-center">
-      <div className="mb-6 flex size-20 items-center justify-center rounded-[28px] bg-secondary">
+      <div className="mb-6 flex size-20 items-center justify-center rounded-card bg-secondary">
         <MailCheck className="size-10 text-primary" />
       </div>
-      <h1 className="text-2xl font-bold">Verifique seu email</h1>
-      <p className="mt-2 text-muted">
+      <h1 className="type-title1">Verifique seu email</h1>
+      <p className="mt-2 type-body text-muted">
         Enviamos um link de confirmação para <strong className="text-ink">{authUser?.email}</strong>. Abra-o para ativar sua conta.
       </p>
       <Button className="mt-8 w-full" onClick={check} loading={loading === 'check'}>
@@ -258,7 +254,7 @@ export function VerifyEmailScreen() {
       <Button variant="ghost" className="mt-2 w-full" onClick={resend} loading={loading === 'resend'}>
         Reenviar link
       </Button>
-      <button className="mt-6 text-sm text-muted underline" onClick={() => backend.signOut()}>
+      <button className="mt-6 type-callout text-muted underline" onClick={() => backend.signOut()}>
         Usar outra conta
       </button>
     </div>

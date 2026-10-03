@@ -43,7 +43,7 @@ export function PullToRefresh({ onRefresh, children, className }: { onRefresh: (
       onTouchEnd={onTouchEnd}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center" style={{ transform: `translateY(${pull - 40}px)`, opacity: Math.min(1, pull / THRESHOLD) }}>
-        <div className="flex size-9 items-center justify-center rounded-full bg-white shadow-card">
+        <div className="flex size-9 items-center justify-center rounded-full bg-surface shadow-card">
           <RefreshCw className={cn('size-4 text-primary', refreshing && 'animate-spin')} style={{ transform: refreshing ? undefined : `rotate(${pull * 3}deg)` }} />
         </div>
       </div>
