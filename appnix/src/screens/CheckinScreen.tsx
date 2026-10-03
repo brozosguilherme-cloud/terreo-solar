@@ -5,13 +5,14 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomSheet, PORTAL_ID } from '../components/BottomSheet';
 import { Button, IconButton, MissionImage, ScreenHeader, Spinner, Stars, StatusBanner, cn } from '../components/ui';
+import { LocationBanner } from '../components/LocationPermission';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
 import { CHECKIN_RADIUS_METERS, formatDistance, haversineDistance } from '../lib/geo';
 import { reverseGeocode } from '../lib/geocode';
 import { downscaleDataUrl } from '../lib/image';
 import { getUserLevelInfo } from '../lib/levels';
-import { getCurrentPosition, takePhoto, type Position } from '../lib/native';
+import { getCurrentPosition, LocationError, takePhoto, type Position } from '../lib/native';
 import { formatPoints } from '../lib/time';
 import { missionPoints } from '../services/rules';
 import type { CheckinResult, Mission } from '../services/types';
@@ -35,7 +36,7 @@ function Step({ n, title, optional, done, children }: { n: number; title: string
 }
 
 export function CheckinScreen() {
-  const { missions, profile, position: watchedPos, checkinMissionId, backend, toast, setTab } = useApp();
+  const { missions, profile, position: watchedPos, checkinMissionId, backend, toast, setTab, locationStatus, setLocationSheetOpen, refreshLocationStatus } = useApp();
   const [pos, setPos] = useState<Position | null>(watchedPos);
   const [locating, setLocating] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
@@ -57,19 +58,26 @@ export function CheckinScreen() {
   }, [checkinMissionId]);
 
   const locate = async () => {
+    if (locationStatus !== 'granted') {
+      setLocationSheetOpen(true);
+      return;
+    }
     setLocating(true);
     try {
       setPos(await getCurrentPosition());
     } catch (e) {
-      toast(friendlyError(e) || 'Não foi possível obter sua localização.', 'error');
+      if (e instanceof LocationError && e.status !== 'granted') {
+        await refreshLocationStatus();
+        setLocationSheetOpen(true);
+      } else toast(friendlyError(e) || 'Não foi possível obter sua localização.', 'error');
     } finally {
       setLocating(false);
     }
   };
 
   useEffect(() => {
-    if (!pos) locate();
-  }, []);
+    if (!pos && locationStatus === 'granted') locate();
+  }, [locationStatus]);
 
   // endereço atual (geocoding reverso), com throttle por ~100 m
   const posKey = pos ? `${pos.lat.toFixed(3)},${pos.lng.toFixed(3)}` : null;
@@ -154,6 +162,9 @@ export function CheckinScreen() {
         <div className="space-y-3 px-gutter pb-[230px]">
           {/* 1 · Local */}
           <Step n={1} title="Local" done={locationOk}>
+            {locationStatus && locationStatus !== 'granted' ? (
+              <LocationBanner className="mb-4 shadow-none" />
+            ) : (
             <div className="mb-4 flex items-center gap-3 rounded-control bg-bg px-3 py-2.5">
               {locating ? <Spinner className="size-4 text-primary" /> : <Navigation className={cn('size-4 shrink-0', pos ? 'text-success' : 'text-muted')} />}
               <div className="min-w-0 flex-1">
@@ -164,6 +175,7 @@ export function CheckinScreen() {
                 <RefreshCw className={cn('size-4', locating && 'animate-spin')} />
               </button>
             </div>
+            )}
 
             <button onClick={() => setPicker(true)} className="flex w-full items-center gap-4 rounded-control border border-line/50 p-3 text-left transition-all active:scale-[0.98]">
               {mission ? (

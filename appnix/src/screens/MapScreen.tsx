@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
 import { Circle, CircleMarker, MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
 import { Button, CATEGORY_META, LinkButton, Meta, MissionImage, PointsPill, cn } from '../components/ui';
+import { LocationBanner } from '../components/LocationPermission';
 import { useApp } from '../hooks/useApp';
 import { CHECKIN_RADIUS_METERS, directionsUrl, formatDistance, type LatLng } from '../lib/geo';
 import type { Mission, MissionCategory } from '../services/types';
@@ -76,7 +77,7 @@ function MapController({ target }: { target: { center: LatLng; zoom?: number; ke
 }
 
 export function MapScreen() {
-  const { missions, position, distanceTo, profile, openCheckin, positionError } = useApp();
+  const { missions, position, distanceTo, profile, openCheckin } = useApp();
   const [selected, setSelected] = useState<Mission | null>(null);
   const [category, setCategory] = useState<MissionCategory | 'all'>('all');
   const [flyTarget, setFlyTarget] = useState<{ center: LatLng; zoom?: number; key: number } | null>(null);
@@ -148,9 +149,9 @@ export function MapScreen() {
             );
           })}
         </div>
-        {positionError && !position && (
-          <p className="pointer-events-auto mx-gutter rounded-control bg-white/95 px-4 py-2.5 type-caption text-muted shadow-card">📍 Ative a localização para ver sua posição e as distâncias.</p>
-        )}
+        <div className="pointer-events-auto px-gutter">
+          <LocationBanner className="bg-surface" />
+        </div>
       </div>
 
       <button

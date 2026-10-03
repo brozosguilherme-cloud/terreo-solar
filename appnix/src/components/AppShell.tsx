@@ -1,6 +1,6 @@
 import { App as CapApp } from '@capacitor/app';
 import { AnimatePresence, motion } from 'motion/react';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useApp, type Tab } from '../hooks/useApp';
 import { isNative } from '../lib/native';
 import { CheckinScreen } from '../screens/CheckinScreen';
@@ -11,6 +11,7 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { SocialScreen } from '../screens/SocialScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { BottomNav } from './BottomNav';
+import { LocationSheet } from './LocationPermission';
 import { Spinner } from './ui';
 
 // Leaflet só é carregado quando o mapa é aberto.
@@ -28,7 +29,7 @@ const SCREENS: Record<Tab, React.ComponentType> = {
 const MIN_SPLASH_MS = 1200;
 
 export function AppShell() {
-  const { authReady, authUser, profile, tab, setTab, backend } = useApp();
+  const { authReady, authUser, profile, tab, setTab, backend, locationStatus, setLocationSheetOpen } = useApp();
   const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
@@ -59,6 +60,15 @@ export function AppShell() {
 
   const Screen = SCREENS[tab];
 
+  // Pré-permissão: explica o uso da localização antes do diálogo do sistema (uma vez por sessão).
+  const askedLocation = useRef(false);
+  useEffect(() => {
+    if (stage !== 'app' || askedLocation.current || locationStatus !== 'prompt') return;
+    askedLocation.current = true;
+    const t = setTimeout(() => setLocationSheetOpen(true), 700);
+    return () => clearTimeout(t);
+  }, [stage, locationStatus, setLocationSheetOpen]);
+
   return (
     <AnimatePresence mode="wait">
       <motion.div key={stage} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
@@ -88,6 +98,7 @@ export function AppShell() {
               </motion.main>
             </AnimatePresence>
             <BottomNav />
+            <LocationSheet />
           </>
         )}
       </motion.div>

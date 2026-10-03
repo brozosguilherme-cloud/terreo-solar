@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { haversineDistance, type LatLng } from '../lib/geo';
-import { registerPush, watchPosition, type Position } from '../lib/native';
+import { App as CapApp } from '@capacitor/app';
+import { checkLocationStatus, isNative, openLocationSettings, registerPush, requestLocationPermission, watchPosition, type LocationStatus, type Position } from '../lib/native';
 import { getBackend } from '../services';
 import type { Achievement, AppNotification, AuthUser, Backend, Mission, UserProfile } from '../services/types';
 
@@ -26,6 +27,17 @@ interface AppState {
 
   position: Position | null;
   positionError: string | null;
+  /** null enquanto verifica. */
+  locationStatus: LocationStatus | null;
+  /** Reconsulta a permissão sem abrir diálogo. */
+  refreshLocationStatus: () => Promise<void>;
+  /** Abre o diálogo do sistema; devolve o novo estado. */
+  requestLocation: () => Promise<LocationStatus>;
+  /** Abre as configurações do Android (app ou GPS). */
+  openLocationSettings: (target: 'app' | 'location') => Promise<boolean>;
+  /** Sheet explicativa de localização (global). */
+  locationSheetOpen: boolean;
+  setLocationSheetOpen: (open: boolean) => void;
   distanceTo: (p: LatLng) => number | null;
 
   notifications: AppNotification[];
@@ -53,6 +65,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [contentLoading, setContentLoading] = useState(true);
   const [position, setPosition] = useState<Position | null>(null);
   const [positionError, setPositionError] = useState<string | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus | null>(null);
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [tab, setTab] = useState<Tab>('home');
   const [checkinMissionId, setCheckinMissionId] = useState<string | null>(null);
@@ -118,16 +132,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (profile) backend.getMissions().then((m) => setMissions([...m])).catch(() => undefined);
   }, [profile?.missionsCompleted, backend]);
 
+  // Consulta a permissão (sem abrir diálogo) ao entrar e sempre que o app volta ao primeiro plano
+  // — por exemplo, quando o usuário retorna das configurações do Android.
+  const refreshLocationStatus = useCallback(async () => setLocationStatus(await checkLocationStatus()), []);
+
   useEffect(() => {
     if (!uid) return;
+    refreshLocationStatus();
+    if (!isNative()) return;
+    const sub = CapApp.addListener('resume', () => refreshLocationStatus());
+    return () => {
+      sub.then((h) => h.remove());
+    };
+  }, [uid, refreshLocationStatus]);
+
+  const requestLocation = useCallback(async () => {
+    const next = await requestLocationPermission();
+    setLocationStatus(next);
+    return next;
+  }, []);
+
+  // GPS em alta precisão só depois da permissão concedida (nunca em segundo plano).
+  const locationGranted = locationStatus === 'granted';
+  useEffect(() => {
+    if (!uid || !locationGranted) return;
     return watchPosition(
       (p) => {
         setPosition(p);
         setPositionError(null);
       },
-      (e) => setPositionError(e.message || 'Localização indisponível'),
+      (e) => {
+        setPositionError(e.message || 'Localização indisponível');
+        if (e.status !== 'granted') setLocationStatus(e.status);
+      },
     );
-  }, [uid]);
+  }, [uid, locationGranted]);
 
   const distanceTo = useCallback((p: LatLng) => (position ? haversineDistance(position, p) : null), [position]);
 
@@ -148,6 +187,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshContent,
     position,
     positionError,
+    locationStatus,
+    refreshLocationStatus,
+    requestLocation,
+    openLocationSettings,
+    locationSheetOpen,
+    setLocationSheetOpen,
     distanceTo,
     notifications,
     unreadCount: notifications.filter((n) => !n.read).length,

@@ -2,6 +2,7 @@ import { Bell, Camera, CheckCircle2, ChevronRight, Heart, MapPin, MessageCircle,
 import { useEffect, useMemo, useState } from 'react';
 import { BottomSheet } from '../components/BottomSheet';
 import { MissionCard, MissionCardSkeleton } from '../components/MissionCard';
+import { LocationBanner } from '../components/LocationPermission';
 import { MissionSheet } from '../components/MissionSheet';
 import { PullToRefresh } from '../components/PullToRefresh';
 import {
@@ -104,6 +105,10 @@ export function HomeScreen() {
           <Avatar src={profile?.avatarUrl} name={profile?.name} points={profile?.points ?? 0} size={48} />
         </button>
       </header>
+
+      <div className="px-gutter empty:hidden">
+        <LocationBanner className="mb-3" />
+      </div>
 
       {/* Progresso de nível */}
       <button onClick={() => setTab('profile')} className={cn('mx-gutter block w-[calc(100%-2*var(--spacing-gutter))] p-5 text-left', cardInteractive)}>
