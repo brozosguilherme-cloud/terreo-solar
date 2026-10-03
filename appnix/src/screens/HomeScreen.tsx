@@ -1,5 +1,4 @@
 import { Bell, Camera, CheckCircle2, ChevronRight, Heart, MapPin, MessageCircle, Navigation, Search, Sparkles, UserPlus } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
 import { BottomSheet } from '../components/BottomSheet';
 import { MissionCard, MissionCardSkeleton } from '../components/MissionCard';
@@ -10,12 +9,14 @@ import {
   Avatar,
   Button,
   CATEGORY_META,
+  cardInteractive,
   Chip,
   EmptyState,
   IconButton,
   LinkButton,
   Meta,
   MissionImage,
+  PointsPill,
   ProgressBar,
   SectionHeader,
   Skeleton,
@@ -37,11 +38,6 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'explorador', label: 'Explorador' },
 ];
 const NEAR_RADIUS_M = 5000;
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-}
 
 function routeUrl(stops: LatLng[], origin: LatLng | null) {
   if (!stops.length) return '#';
@@ -97,91 +93,95 @@ export function HomeScreen() {
 
   return (
     <PullToRefresh onRefresh={refreshContent}>
-      {/* Cabeçalho */}
-      <header className="px-gutter pt-safe pb-2">
-        <div className="flex items-center justify-between">
-          <p className="type-callout text-muted">{greeting()}</p>
-          <div className="flex items-center gap-3">
-            <IconButton icon={Bell} label={`Notificações${unreadCount ? ` (${unreadCount} novas)` : ''}`} badge={unreadCount} onClick={() => setNotifOpen(true)} />
-            <button onClick={() => setTab('profile')} aria-label="Abrir perfil" className="rounded-full">
-              <Avatar src={profile?.avatarUrl} name={profile?.name} points={profile?.points ?? 0} size={40} />
-            </button>
-          </div>
+      {/* Header padrão: saudação à esquerda, sino + avatar à direita */}
+      <header className="flex items-center gap-3 px-gutter pt-safe pb-5">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate type-title1">Olá, {firstName}</h1>
+          <p className="mt-0.5 truncate type-caption text-muted">{level.title}</p>
         </div>
-        <h1 className="mt-4 type-title1">Para onde vamos hoje, {firstName}?</h1>
-
-        {/* Progresso de nível — uma linha fina, sem bloco escuro */}
-        <button onClick={() => setTab('profile')} className="mt-5 block w-full text-left">
-          <div className="flex items-baseline justify-between">
-            <span className="type-caption text-muted">
-              Nível {level.levelNum} · <span className="text-ink">{level.title}</span>
-            </span>
-            <span className="type-caption type-number text-muted">{formatPoints(level.currentPontos)} pts</span>
-          </div>
-          <ProgressBar percent={level.progressPercent} className="mt-2 h-1" />
+        <IconButton icon={Bell} label={`Notificações${unreadCount ? ` (${unreadCount} novas)` : ''}`} dot={unreadCount > 0} onClick={() => setNotifOpen(true)} />
+        <button onClick={() => setTab('profile')} aria-label="Abrir perfil" className="rounded-full transition-transform active:scale-95">
+          <Avatar src={profile?.avatarUrl} name={profile?.name} points={profile?.points ?? 0} size={48} />
         </button>
       </header>
 
-      {/* Filtros */}
-      <div className="no-scrollbar mt-8 -ml-1 flex gap-1 overflow-x-auto px-gutter" role="tablist" aria-label="Filtrar missões">
-        {FILTERS.map((f) => {
-          const meta = f.id in CATEGORY_META ? CATEGORY_META[f.id as MissionCategory] : null;
-          return (
-            <Chip key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)} icon={f.id === 'near' ? Navigation : meta?.icon} iconColor={meta?.color}>
-              {f.label}
-            </Chip>
-          );
-        })}
+      {/* Progresso de nível */}
+      <button onClick={() => setTab('profile')} className={cn('mx-gutter block w-[calc(100%-2*var(--spacing-gutter))] p-5 text-left', cardInteractive)}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="type-overline text-primary-strong">Nível {level.levelNum}</p>
+            <p className="mt-1 truncate type-title3">{level.nextTierTitle ? `Rumo a ${level.nextTierTitle}` : 'Lenda do Mapa'}</p>
+          </div>
+          <PointsPill points={level.currentPontos} />
+        </div>
+        <ProgressBar percent={level.progressPercent} className="mt-4" />
+        <p className="mt-2 type-caption text-muted">
+          {level.nextTierRequiredPontos != null
+            ? `Faltam ${formatPoints(level.nextTierRequiredPontos - level.currentPontos)} pts para o próximo nível`
+            : 'Nível máximo alcançado. Você é uma lenda!'}
+        </p>
+      </button>
+
+      {/* Filtros por pílulas */}
+      <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto px-gutter py-2" role="tablist" aria-label="Filtrar missões">
+        {FILTERS.map((f) => (
+          <Chip key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)} icon={f.id === 'near' ? Navigation : undefined}>
+            {f.label}
+          </Chip>
+        ))}
       </div>
 
       {/* Trilhas */}
-      <section className="mt-section">
+      <section className="mt-6">
         <SectionHeader title="Trilhas" action={!loading && `${trails.length} roteiros`} />
-        <div className="no-scrollbar flex snap-x snap-mandatory scroll-px-gutter gap-4 overflow-x-auto px-gutter pb-2">
+        <div className="no-scrollbar flex snap-x snap-mandatory scroll-px-gutter gap-3 overflow-x-auto px-gutter pt-1 pb-4">
           {loading
-            ? [0, 1].map((i) => <Skeleton key={i} className="h-[184px] w-[240px] shrink-0 rounded-card" />)
+            ? [0, 1].map((i) => <Skeleton key={i} className="h-[248px] w-[264px] shrink-0 rounded-card" />)
             : trails.map(({ a, category, progress, nearest }) => {
                 const Icon = ACHIEVEMENT_ICONS[a.icon] ?? Sparkles;
                 const complete = progress.percent === 100;
                 return (
-                  <motion.button key={a.id} whileTap={{ scale: 0.98 }} onClick={() => setTrail(a)} className="w-[240px] shrink-0 snap-start text-left">
-                    <div className="relative h-32 overflow-hidden rounded-card" style={{ background: a.bannerUrl ? undefined : CATEGORY_META[category].soft }}>
+                  <button key={a.id} onClick={() => setTrail(a)} className={cn('flex w-[264px] shrink-0 snap-start flex-col overflow-hidden text-left', cardInteractive)}>
+                    <div className="relative h-24" style={{ background: a.bannerUrl ? undefined : CATEGORY_META[category].soft }}>
                       {a.bannerUrl ? (
                         <img src={a.bannerUrl} alt="" className="size-full object-cover" />
                       ) : (
                         <>
-                          <div className="absolute -right-6 -bottom-10 size-32 rounded-full bg-white/40" />
-                          <Icon className="absolute right-5 bottom-5 size-10" style={{ color: CATEGORY_META[category].color }} strokeWidth={1.25} />
+                          <div className="absolute -right-6 -bottom-12 size-32 rounded-full bg-white/50" />
+                          <Icon className="absolute right-5 bottom-4 size-10" style={{ color: CATEGORY_META[category].color }} strokeWidth={1.5} />
                         </>
                       )}
-                      
+                      <span className="absolute top-3 left-3 rounded-full bg-white/90 px-2.5 py-1 type-tag text-primary-strong">+{a.rewardPoints} bônus</span>
                     </div>
-                    <div className="pt-3">
-                      <h3 className="truncate type-title3">{a.title}</h3>
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="type-caption text-muted">
-                          <span className="type-number">{progress.done}/{progress.total}</span> locais
-                        </span>
-                        {complete ? (
-                          <span className="inline-flex items-center gap-1 type-caption text-success-ink">
-                            <CheckCircle2 className="size-3.5" /> Concluída
+                    <div className="flex flex-1 flex-col p-5">
+                      <h3 className="truncate type-title3 leading-snug">{a.title}</h3>
+                      <p className="mt-1 line-clamp-2 type-caption text-muted">{a.description}</p>
+                      <div className="mt-auto pt-4">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="type-caption text-muted">
+                            <span className="type-number text-ink">{progress.done}/{progress.total}</span> locais
                           </span>
-                        ) : (
-                          <Meta icon={MapPin}>{formatDistance(nearest)}</Meta>
-                        )}
+                          {complete ? (
+                            <span className="inline-flex items-center gap-1 type-caption text-success-ink">
+                              <CheckCircle2 className="size-3.5" /> Concluída
+                            </span>
+                          ) : (
+                            <Meta icon={MapPin}>{formatDistance(nearest)}</Meta>
+                          )}
+                        </div>
+                        <ProgressBar percent={progress.percent} tone={complete ? 'success' : 'warm'} />
                       </div>
-                      <ProgressBar percent={progress.percent} tone={complete ? 'success' : 'primary'} className="mt-3 h-1" />
                     </div>
-                  </motion.button>
+                  </button>
                 );
               })}
         </div>
       </section>
 
       {/* Missões */}
-      <section className="mt-section pb-nav">
+      <section className="mt-4 pb-nav">
         <SectionHeader title="Missões" action={!loading && `${list.length} locais`} />
-        <div className="divide-y divide-line-soft px-gutter">
+        <div className="space-y-3 px-gutter">
           {loading
             ? [0, 1, 2].map((i) => <MissionCardSkeleton key={i} />)
             : list.map(({ m, d }) => <MissionCard key={m.id} mission={m} distance={d} done={checkins.includes(m.id)} onClick={() => setMission(m)} />)}
@@ -255,14 +255,14 @@ function TrailSheet({ trail, onClose, onSelect, origin }: { trail: Achievement |
       {trail && progress && (
         <div className="px-gutter pb-6">
           <p className="type-body text-muted">{trail.description}</p>
-          <ProgressBar percent={progress.percent} tone={progress.percent === 100 ? 'success' : 'primary'} className="mt-5 h-1" />
+          <ProgressBar percent={progress.percent} tone={progress.percent === 100 ? 'success' : 'warm'} className="mt-5" />
           <ol className="mt-5 divide-y divide-line-soft">
             {stops.map((s, i) => {
               const done = checkins.includes(s.id);
               return (
                 <li key={s.id}>
                   <button onClick={() => onSelect(s)} className="flex w-full items-center gap-4 py-3 text-left transition active:opacity-60">
-                    <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full type-caption', done ? 'bg-success-soft text-success-ink' : 'bg-surface-muted text-muted')}>
+                    <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full type-caption font-bold', done ? 'bg-success text-white' : 'bg-secondary text-primary-strong')}>
                       {done ? <CheckCircle2 className="size-3.5" /> : i + 1}
                     </span>
                     <MissionImage src={s.image} category={s.category} className="size-12 rounded-control" iconSize="size-5" decor={false} />

@@ -11,39 +11,49 @@ const ITEMS: { id: Tab; label: string; icon: typeof Compass }[] = [
   { id: 'social', label: 'Social', icon: Users },
 ];
 
+/**
+ * Tab bar flutuante centralizada (não colada no rodapé).
+ * Ativo expande de 54 → 72 px com pílula elástica `active-nav-pill` (primary/10).
+ */
 export function BottomNav() {
   const { tab, setTab, openCheckin } = useApp();
   return (
-    <nav className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-safe" aria-label="Navegação principal">
-      <div className="pointer-events-auto mx-auto flex max-w-md items-center justify-between rounded-full bg-white/90 p-1.5 shadow-float backdrop-blur-xl">
+    <nav className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center pb-[max(env(safe-area-inset-bottom),24px)]" aria-label="Navegação principal">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-sheet bg-white/95 p-2 shadow-float backdrop-blur-xl">
         {ITEMS.map(({ id, label, icon: Icon }) => {
           const active = tab === id;
           if (id === 'checkin') {
             return (
-              <button
+              <motion.button
                 key={id}
+                layout
                 onClick={() => openCheckin(null)}
                 aria-label={label}
                 aria-current={active ? 'page' : undefined}
-                className="relative mx-1 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-primary transition active:scale-95"
+                className="flex h-[54px] w-[54px] items-center justify-center rounded-[24px] bg-primary text-white shadow-primary transition-transform active:scale-95"
               >
-                <Icon className="size-5" strokeWidth={2} />
-              </button>
+                <Icon className="size-6" strokeWidth={2.2} />
+              </motion.button>
             );
           }
           return (
-            <button
+            <motion.button
               key={id}
+              layout
               onClick={() => setTab(id)}
+              aria-label={label}
               aria-current={active ? 'page' : undefined}
-              className={cn('relative flex h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full type-overline font-medium normal-case tracking-normal transition-colors', active ? 'text-ink' : 'text-muted')}
+              transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+              className={cn('relative flex h-[54px] flex-col items-center justify-center gap-0.5 rounded-[24px] transition-colors active:scale-95', active ? 'w-[72px] text-primary' : 'w-[54px] text-muted')}
             >
+              {active && <motion.div layoutId="active-nav-pill" className="absolute inset-0 rounded-[24px] bg-primary/10" transition={{ type: 'spring', stiffness: 500, damping: 30 }} />}
+              <Icon className="relative size-5" strokeWidth={active ? 2.4 : 2} />
               {active && (
-                <motion.div layoutId="active-nav-pill" className="absolute inset-0 rounded-full bg-surface-muted" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />
+                <motion.span initial={{ opacity: 0, y: 2 }} animate={{ opacity: 1, y: 0 }} className="relative type-tag normal-case tracking-normal">
+                  {label}
+                </motion.span>
               )}
-              <Icon className="relative size-5" strokeWidth={active ? 2 : 1.5} />
-              <span className="relative max-w-full truncate px-1">{label}</span>
-            </button>
+            </motion.button>
           );
         })}
       </div>

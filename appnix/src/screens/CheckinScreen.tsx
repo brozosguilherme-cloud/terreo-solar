@@ -21,10 +21,10 @@ const RATING_LABELS = ['Sem nota', 'Não curti', 'Poderia ser melhor', 'Legal', 
 /** Etapa numerada do fluxo (1 Local · 2 Foto · 3 Avaliação). */
 function Step({ n, title, optional, done, children }: { n: number; title: string; optional?: boolean; done: boolean; children: ReactNode }) {
   return (
-    <section className="py-6 first:pt-0">
+    <section className="rounded-card bg-surface p-5 shadow-card">
       <div className="mb-4 flex items-center gap-2.5">
-        <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full type-caption transition-colors', done ? 'bg-success-soft text-success-ink' : 'bg-surface-muted text-muted')}>
-          {done ? <CheckCircle2 className="size-3.5" /> : n}
+        <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full type-caption font-bold transition-colors', done ? 'bg-success text-white' : 'bg-secondary text-primary-strong')}>
+          {done ? <CheckCircle2 className="size-4" /> : n}
         </span>
         <h2 className="type-title3">{title}</h2>
         {optional && <span className="type-caption text-muted">opcional</span>}
@@ -151,10 +151,10 @@ export function CheckinScreen() {
       <div className="h-full overflow-y-auto no-scrollbar">
         <ScreenHeader title="Check-in" subtitle="Registre sua visita e ganhe pontos" leading={<IconButton icon={ArrowLeft} label="Voltar" onClick={() => setTab('home')} />} />
 
-        <div className="divide-y divide-line-soft px-gutter pb-[220px]">
+        <div className="space-y-3 px-gutter pb-[230px]">
           {/* 1 · Local */}
           <Step n={1} title="Local" done={locationOk}>
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3 rounded-control bg-bg px-3 py-2.5">
               {locating ? <Spinner className="size-4 text-primary" /> : <Navigation className={cn('size-4 shrink-0', pos ? 'text-success' : 'text-muted')} />}
               <div className="min-w-0 flex-1">
                 <p className="truncate type-label">{pos ? address ?? `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}` : locating ? 'Obtendo sua localização…' : 'GPS indisponível'}</p>
@@ -165,7 +165,7 @@ export function CheckinScreen() {
               </button>
             </div>
 
-            <button onClick={() => setPicker(true)} className="flex w-full items-center gap-4 rounded-card border border-line-soft p-3 text-left transition active:bg-surface-muted">
+            <button onClick={() => setPicker(true)} className="flex w-full items-center gap-4 rounded-control border border-line/50 p-3 text-left transition-all active:scale-[0.98]">
               {mission ? (
                 <>
                   <MissionImage src={mission.image} category={mission.category} className="size-14 shrink-0 rounded-control" iconSize="size-6" decor={false} />
@@ -221,11 +221,11 @@ export function CheckinScreen() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => capture('camera')} className="flex h-28 flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line type-label text-ink transition active:bg-surface-muted">
-                  <Camera className="size-6 text-muted" strokeWidth={1.5} /> Câmera
+                <button onClick={() => capture('camera')} className="flex h-28 flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-primary/40 bg-secondary type-label text-primary-strong transition-all active:scale-95">
+                  <Camera className="size-6" /> Câmera
                 </button>
-                <button onClick={() => capture('gallery')} className="flex h-28 flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line type-label text-ink transition active:bg-surface-muted">
-                  <ImagePlus className="size-6 text-muted" strokeWidth={1.5} /> Galeria
+                <button onClick={() => capture('gallery')} className="flex h-28 flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-line bg-bg type-label text-muted transition-all active:scale-95">
+                  <ImagePlus className="size-6" /> Galeria
                 </button>
               </div>
             )}
@@ -243,7 +243,7 @@ export function CheckinScreen() {
               maxLength={280}
               rows={3}
               placeholder="Deixe uma dica para outros exploradores (opcional)"
-              className="mt-4 w-full resize-none rounded-card border border-line-soft bg-surface p-4 type-callout outline-none focus:border-primary"
+              className="mt-4 w-full resize-none rounded-control border border-line/80 bg-bg p-4 type-callout outline-none focus:border-primary"
             />
             <p className="text-right type-caption text-muted">{comment.length}/280</p>
           </Step>
@@ -251,7 +251,7 @@ export function CheckinScreen() {
       </div>
 
       {/* CTA fixo acima da navegação */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[88px] z-30">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[100px] z-30">
         <div className="h-6 bg-gradient-to-t from-bg to-transparent" />
         <div className="pointer-events-auto bg-bg px-gutter pb-3">
           <p className={cn('mb-2 text-center type-caption', blocker ? 'text-muted' : 'text-success-ink')}>{blocker ?? 'Tudo pronto!'}</p>

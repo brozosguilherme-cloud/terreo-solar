@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight, Cookie, FileText, Lock, LogOut, MapPin, Settings, Shield, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Cookie, FileText, Lock, LogOut, MapPin, Settings, Shield, Sparkles, Stamp, Trash2, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/BottomSheet';
 import { Avatar, Button, IconButton, ProgressBar, cn } from '../components/ui';
@@ -61,7 +61,7 @@ export function ProfileScreen() {
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
       {/* Hero */}
-      <div className="px-gutter pt-safe">
+      <div className="rounded-b-sheet bg-secondary px-gutter pt-safe pb-6">
         <div className="flex items-center justify-between">
           <IconButton icon={ArrowLeft} label="Voltar" onClick={() => setTab('home')} />
           <IconButton icon={Settings} label="Configurações" onClick={() => setSettings(true)} />
@@ -70,16 +70,16 @@ export function ProfileScreen() {
           <Avatar src={profile.avatarUrl} name={profile.name} points={profile.points} size={96} />
           <h1 className="mt-4 type-title2">{profile.name}</h1>
           <p className="type-callout text-muted">{profile.email}</p>
-          <button onClick={() => setLevels(true)} className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3.5 type-caption text-ink transition active:scale-95">
-            Nível {level.levelNum} · {level.title}
+          <button onClick={() => setLevels(true)} className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-full bg-surface px-3.5 type-caption font-semibold text-primary-strong shadow-card transition-all active:scale-95">
+            <Trophy className="size-3.5" /> Nível {level.levelNum} · {level.title}
           </button>
         </div>
-        <div className="mt-8">
+        <div className="mt-5 rounded-card bg-surface p-5 shadow-card">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className="truncate type-label">{level.nextTierTitle ? `Rumo a ${level.nextTierTitle}` : 'Nível máximo!'}</span>
             <span className="type-caption type-number text-muted">{level.progressPercent}%</span>
           </div>
-          <ProgressBar percent={level.progressPercent} className="h-1" />
+          <ProgressBar percent={level.progressPercent} />
           <p className="mt-2 type-caption type-number text-muted">
             {level.nextTierRequiredPontos != null
               ? `${formatPoints(level.currentPontos)} / ${formatPoints(level.nextTierRequiredPontos)} pts`
@@ -88,15 +88,18 @@ export function ProfileScreen() {
         </div>
       </div>
 
-      {/* Estatísticas — números em linha, sem blocos */}
-      <div className="mx-gutter mt-8 grid grid-cols-3 divide-x divide-line-soft border-y border-line-soft py-5">
+      {/* Grade de estatísticas */}
+      <div className="mt-6 grid grid-cols-3 gap-3 px-gutter">
         {[
-          { label: 'Pontos', value: formatPoints(profile.points) },
-          { label: 'Missões', value: String(profile.missionsCompleted) },
-          { label: 'Passaporte', value: String(profile.checkins.length) },
+          { icon: Sparkles, label: 'Pontos', value: formatPoints(profile.points), cls: 'bg-accent/30 text-primary-strong' },
+          { icon: Trophy, label: 'Missões', value: String(profile.missionsCompleted), cls: 'bg-secondary text-primary-strong' },
+          { icon: Stamp, label: 'Passaporte', value: String(profile.checkins.length), cls: 'bg-success-soft text-success-ink' },
         ].map((s) => (
-          <div key={s.label} className="flex flex-col items-center">
-            <span className="type-stat">{s.value}</span>
+          <div key={s.label} className="flex flex-col items-center rounded-card bg-surface px-2 py-4 shadow-card">
+            <span className={cn('flex size-9 items-center justify-center rounded-full', s.cls)}>
+              <s.icon className="size-4" />
+            </span>
+            <span className="mt-2 type-stat">{s.value}</span>
             <span className="type-caption text-muted">{s.label}</span>
           </div>
         ))}

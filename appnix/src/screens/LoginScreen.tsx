@@ -104,7 +104,7 @@ export function LoginScreen() {
           <div className="flex size-10 items-center justify-center rounded-control bg-primary">
             <Compass className="size-6 text-white" />
           </div>
-          <span className="type-title2">
+          <span className="type-logo">
             App<span className="text-primary">Nix</span>
           </span>
         </div>

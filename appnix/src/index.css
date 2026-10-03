@@ -8,35 +8,40 @@
  * Regra: telas e componentes usam APENAS estes tokens (sem px/hex avulsos).
  */
 @theme static {
-  /* ---------- Fontes ---------- */
+  /* ---------- Fontes (Outfit títulos/logo · Inter corpo/números) ---------- */
   --font-display: 'Outfit Variable', 'Outfit', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  /* ---------- Cores de marca ---------- */
+  /* ---------- Paleta "Warm Nomad" ---------- */
   --color-primary: #e9a34d;
-  --color-primary-strong: #c9842f; /* texto/ícone laranja sobre fundo claro (contraste) */
+  --color-primary-strong: #c9842f; /* texto laranja pequeno sobre branco (contraste) */
   --color-secondary: #fff6ee;
   --color-accent: #ffd166;
   --color-success: #00d084;
 
-  /* ---------- Neutros ---------- */
-  --color-bg: #fcfbf9;
+  --color-bg: #fafafa;
   --color-surface: #ffffff;
-  --color-surface-muted: #f5f3f0; /* trilhos, segmentados, fundos de input secundário */
-  --color-ink: #222222;
-  --color-muted: #8a8580;
+  --color-surface-muted: #f4f4f5; /* zinc-100: trilhos, segmentados, desabilitado */
+  --color-ink: #222222; /* "Carbon" */
+  --color-muted: #717171;
   --color-line: #dddddd;
-  --color-line-soft: #efece8;
+  --color-line-soft: #eeeeee; /* border/50 sobre branco */
 
-  /* ---------- Semânticas (fundo suave + tinta legível) ---------- */
+  /* desabilitado (fora do raio etc.) */
+  --color-disabled-bg: #f4f4f5;
+  --color-disabled-ink: #a1a1aa;
+  --color-disabled-line: #e4e4e7;
+  --color-handle: #d4d4d8;
+
+  /* semânticas */
   --color-success-soft: #e6f9f1;
   --color-success-ink: #007a52;
-  --color-danger: #e5484d;
+  --color-danger: #ef4444;
   --color-danger-soft: #fdecea;
   --color-danger-ink: #b42318;
   --color-info: #3b82f6;
 
-  /* ---------- Categorias ---------- */
+  /* categorias (miniaturas e ícones) */
   --color-turismo: #e9a34d;
   --color-turismo-soft: #fff1de;
   --color-gastronomia: #e5735a;
@@ -44,68 +49,81 @@
   --color-explorador: #3fa58a;
   --color-explorador-soft: #dff3ec;
 
-  /* ---------- Pódio ---------- */
-  --color-gold: #ffd166;
-  --color-silver: #c3cad3;
-  --color-bronze: #d79a6b;
+  /* pódio metálico */
+  --color-gold: #f59e0b;
+  --color-silver: #94a3b8;
+  --color-bronze: #d97706;
 
-  /* ---------- Espaçamento semântico (grid de 4 pt) ---------- */
-  --spacing-gutter: 24px; /* margem lateral de toda tela */
-  --spacing-card: 20px; /* padding interno de cards */
-  --spacing-section: 40px; /* distância entre seções */
-  --spacing-nav: 120px; /* respiro inferior para a bottom nav flutuante */
+  /* ---------- Espaçamento ---------- */
+  --spacing-gutter: 20px;
+  --spacing-card: 20px; /* p-5 */
+  --spacing-section: 32px;
+  --spacing-nav: 128px; /* pb-32: conteúdo nunca fica atrás da tab bar flutuante */
 
-  /* ---------- Raios ---------- */
-  --radius-control: 16px; /* botões, inputs, icon buttons, thumbnails */
-  --radius-card: 24px; /* cards e containers */
-  --radius-sheet: 32px; /* bottom sheets, hero blocks */
+  /* ---------- Raios (formas orgânicas) ---------- */
+  --radius-control: 16px; /* rounded-2xl: botões, inputs */
+  --radius-photo: 20px; /* fotos do feed */
+  --radius-card: 24px; /* card-nomad */
+  --radius-sheet: 32px; /* tab bar, hero blocks */
+  --radius-modal: 36px; /* topo do bottom sheet */
 
-  /* ---------- Elevação ---------- */
-  --shadow-card: 0 0 0 1px var(--color-line-soft); /* direção calma: contorno fino, sem sombra */
-  --shadow-float: 0 0 0 1px var(--color-line-soft), 0 12px 32px rgb(34 34 34 / 0.08);
-  --shadow-primary: 0 6px 16px -8px rgb(233 163 77 / 0.6);
+  /* ---------- Sombras profundas e difusas ---------- */
+  --shadow-card: 0 0 0 1px rgb(221 221 221 / 0.5), 0 4px 20px rgb(0 0 0 / 0.03);
+  --shadow-card-hover: 0 0 0 1px rgb(221 221 221 / 0.5), 0 8px 30px rgb(0 0 0 / 0.06);
+  --shadow-float: 0 0 0 1px rgb(228 228 231 / 0.8), 0 12px 40px rgb(0 0 0 / 0.12);
+  --shadow-primary: 0 10px 15px -3px rgb(233 163 77 / 0.2), 0 4px 6px -4px rgb(233 163 77 / 0.2);
+  --shadow-sheet: 0 -12px 48px rgb(0 0 0 / 0.16);
 }
 
 /* ---------- Escala tipográfica ---------- */
+@utility type-logo {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
 @utility type-display {
   font-family: var(--font-display);
   font-size: 32px;
   line-height: 38px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
+/* H1 — cabeçalho de tela ("Descobrir", "Comunidade") */
 @utility type-title1 {
   font-family: var(--font-display);
-  font-size: 28px;
-  line-height: 34px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
+/* título de seção / bottom sheet */
 @utility type-title2 {
   font-family: var(--font-display);
   font-size: 20px;
-  line-height: 26px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
 }
+/* H2 — título de card */
 @utility type-title3 {
   font-family: var(--font-display);
-  font-size: 17px;
-  line-height: 22px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
 }
 @utility type-body {
   font-family: var(--font-sans);
   font-size: 15px;
-  line-height: 24px;
+  line-height: 22px;
   font-weight: 400;
 }
 @utility type-body-strong {
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 22px;
-  font-weight: 500;
+  font-weight: 600;
 }
 @utility type-callout {
   font-family: var(--font-sans);
@@ -113,31 +131,54 @@
   line-height: 20px;
   font-weight: 400;
 }
+/* botões e rótulos de ação */
 @utility type-label {
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 20px;
-  font-weight: 500;
+  font-weight: 700;
 }
+/* subtítulo / muted */
 @utility type-caption {
   font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
 }
+/* overline / categoria */
 @utility type-overline {
   font-family: var(--font-sans);
   font-size: 11px;
   line-height: 14px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+/* tag de categoria (pílula) */
+@utility type-tag {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+/* números de pontos / badges */
+@utility type-points {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
 }
 @utility type-stat {
   font-family: var(--font-sans);
   font-size: 22px;
   line-height: 28px;
-  font-weight: 500;
+  font-weight: 900;
+  letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
 }
 @utility type-number {
@@ -153,7 +194,7 @@
     height: 100%;
   }
   body {
-    @apply bg-bg text-ink type-body antialiased;
+    @apply bg-bg text-ink type-body antialiased overflow-x-hidden;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
   }

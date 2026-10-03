@@ -56,22 +56,22 @@ export function SocialScreen() {
 /* ------------------------------------------------------------------ */
 
 const PODIUM = [
-  { place: 2, ring: 'bg-silver', label: 'Prata' },
-  { place: 1, ring: 'bg-gold', label: 'Ouro' },
-  { place: 3, ring: 'bg-bronze', label: 'Bronze' },
+  { place: 2, color: 'var(--color-silver)', h: 'h-24', label: 'Prata' },
+  { place: 1, color: 'var(--color-gold)', h: 'h-32', label: 'Ouro' },
+  { place: 3, color: 'var(--color-bronze)', h: 'h-16', label: 'Bronze' },
 ];
 
 function RankRow({ pos, entry, highlight, trailing }: { pos: number; entry: RankingEntry; highlight?: boolean; trailing?: ReactNode }) {
   return (
-    <div className={cn('flex items-center gap-4 py-3.5', highlight && '-mx-3 rounded-control bg-secondary px-3')}>
-      <span className="w-5 text-center type-caption type-number text-muted">{pos}</span>
+    <div className={cn('flex items-center gap-3 rounded-card bg-surface p-3 shadow-card', highlight && 'ring-2 ring-primary')}>
+      <span className="w-6 text-center type-points text-muted">{pos}</span>
       <Avatar src={entry.avatarUrl} name={entry.name} size={40} ring={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate type-body-strong">{highlight ? `${entry.name} (você)` : entry.name}</p>
         <p className="type-caption text-muted">Nível {entry.level}</p>
       </div>
       {trailing ?? (
-        <span className="type-callout type-number text-muted">{formatPoints(entry.points)}</span>
+        <span className="type-points">{formatPoints(entry.points)} <span className="type-caption text-muted">pts</span></span>
       )}
     </div>
   );
@@ -95,7 +95,7 @@ function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | nul
 
       {!ranking ? (
         <div className="mt-5 space-y-3">
-          <Skeleton className="h-48 w-full rounded-card" />
+          <Skeleton className="h-64 w-full rounded-card" />
           <Skeleton className="h-16 w-full rounded-card" />
           <Skeleton className="h-16 w-full rounded-card" />
         </div>
@@ -103,29 +103,30 @@ function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | nul
         <EmptyState icon={Trophy} title="Ranking vazio" text={period === 'weekly' ? 'Ninguém fez check-in esta semana. Seja o primeiro!' : 'Faça check-ins para aparecer aqui.'} />
       ) : (
         <>
-          {/* Pódio — leve: avatares com anel fino da medalha, sem blocos coloridos */}
-          <div className="mt-8 grid grid-cols-3 items-end gap-2">
-            {PODIUM.map(({ place, ring, label }) => {
+          {/* Pódio: 2º · 1º · 3º em colunas de alturas diferentes, cores metálicas */}
+          <div className="mt-6 flex items-end gap-3 px-1">
+            {PODIUM.map(({ place, color, h, label }) => {
               const r = ranking[place - 1];
-              if (!r) return <div key={place} />;
+              if (!r) return <div key={place} className="flex-1" />;
               const isMe = r.userId === profile?.id;
               return (
-                <motion.div key={place} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: place * 0.06 }} className={cn('flex min-w-0 flex-col items-center', place === 1 ? 'pb-6' : '')}>
-                  {place === 1 && <Crown className="mb-1 size-5 text-primary" strokeWidth={1.5} />}
-                  <div className={cn('rounded-full p-[3px]', ring)}>
-                    <div className="rounded-full bg-bg p-[2px]">
-                      <Avatar src={r.avatarUrl} name={r.name} size={place === 1 ? 64 : 48} ring={false} />
-                    </div>
+                <motion.div key={place} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: place * 0.08, type: 'spring', stiffness: 260, damping: 22 }} className="flex min-w-0 flex-1 flex-col items-center">
+                  <Crown className={cn('mb-1', place === 1 ? 'size-7' : 'size-5')} style={{ color, fill: color }} strokeWidth={1.5} />
+                  <div className="rounded-full p-[3px]" style={{ background: color }}>
+                    <Avatar src={r.avatarUrl} name={r.name} size={place === 1 ? 64 : 48} ring={false} />
                   </div>
-                  <p className="mt-3 w-full truncate text-center type-label">{isMe ? 'Você' : r.name.split(' ')[0]}</p>
-                  <p className="type-caption type-number text-muted">{formatPoints(r.points)} pts</p>
-                  <p className="mt-1 type-caption text-muted">{place}º · {label}</p>
+                  <p className="mt-2 w-full truncate text-center type-body-strong">{isMe ? 'Você' : r.name.split(' ')[0]}</p>
+                  <p className="type-points text-muted">{formatPoints(r.points)} pts</p>
+                  <div className={cn('mt-3 flex w-full flex-col items-center justify-start rounded-t-card pt-3', h)} style={{ background: `color-mix(in srgb, ${color} 16%, white)` }}>
+                    <span className="type-stat" style={{ color }}>{place}</span>
+                    <span className="type-tag" style={{ color }}>{label}</span>
+                  </div>
                 </motion.div>
               );
             })}
           </div>
 
-          <ul className="mt-8 divide-y divide-line-soft">
+          <ul className="mt-5 space-y-2">
             {ranking.slice(3, VISIBLE).map((r, i) => (
               <motion.li key={r.userId} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i, 10) * 0.03 }}>
                 <RankRow pos={i + 4} entry={r} highlight={r.userId === profile?.id} />
@@ -152,7 +153,7 @@ function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | nul
 
 function GroupTitle({ children, count }: { children: ReactNode; count?: number }) {
   return (
-    <h2 className="mb-2 flex items-center gap-2 type-title3">
+    <h2 className="mb-3 flex items-center gap-2 type-title3">
       {children}
       {count != null && count > 0 && <span className="rounded-full bg-primary px-2 type-caption font-semibold text-white">{count}</span>}
     </h2>
@@ -161,7 +162,7 @@ function GroupTitle({ children, count }: { children: ReactNode; count?: number }
 
 function PersonRow({ avatar, name, subtitle, children, tone = 'default' }: { avatar?: string; name: string; subtitle?: string; children?: ReactNode; tone?: 'default' | 'brand' }) {
   return (
-    <div className={cn('flex items-center gap-4', tone === 'brand' ? 'rounded-card bg-secondary p-3' : 'py-3')}>
+    <div className={cn('flex items-center gap-3 rounded-card p-3', tone === 'brand' ? 'bg-secondary' : 'bg-surface shadow-card')}>
       <Avatar src={avatar} name={name} size={40} ring={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate type-body-strong">{name}</p>
@@ -229,7 +230,7 @@ function Friends() {
         </label>
 
         {term.trim().length >= 2 && (
-          <div className="mt-3 divide-y divide-line-soft">
+          <div className="mt-3 space-y-2">
             {results.length === 0 && !searching ? (
               <p className="py-4 text-center type-callout text-muted">Ninguém encontrado com “{term}”.</p>
             ) : (
@@ -286,7 +287,7 @@ function Friends() {
             <EmptyState icon={Users} title="Explore em grupo" text="Busque exploradores pelo nome e envie solicitações de amizade." />
           </Card>
         ) : (
-          <div className="divide-y divide-line-soft">
+          <div className="space-y-2">
             {friends.map((f) => {
               const o = other(f);
               return (

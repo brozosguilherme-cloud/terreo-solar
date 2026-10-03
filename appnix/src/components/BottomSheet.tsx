@@ -17,7 +17,7 @@ interface Props {
 }
 
 /** Modal estilo bottom sheet com drag-handle (arraste para baixo para fechar). */
-export function BottomSheet({ open, onClose, title, children, maxHeight = '88%', className, footer }: Props) {
+export function BottomSheet({ open, onClose, title, children, maxHeight = '85%', className, footer }: Props) {
   const drag = useDragControls();
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function BottomSheet({ open, onClose, title, children, maxHeight = '88%',
       {open && (
         <div className="pointer-events-auto absolute inset-0 z-50">
           <motion.div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -45,7 +45,7 @@ export function BottomSheet({ open, onClose, title, children, maxHeight = '88%',
           <motion.div
             role="dialog"
             aria-modal="true"
-            className={cn('absolute inset-x-0 bottom-0 flex flex-col rounded-t-sheet bg-surface shadow-float', className)}
+            className={cn('absolute inset-x-0 bottom-0 flex flex-col rounded-t-modal bg-surface shadow-sheet', className)}
             style={{ maxHeight }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -58,8 +58,8 @@ export function BottomSheet({ open, onClose, title, children, maxHeight = '88%',
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={onDragEnd}
           >
-            <div className="flex shrink-0 cursor-grab touch-none justify-center pt-3 pb-2 active:cursor-grabbing" onPointerDown={(e) => drag.start(e)}>
-              <div className="h-1 w-10 rounded-full bg-line" />
+            <div className="flex shrink-0 cursor-grab touch-none justify-center pt-3 pb-4 active:cursor-grabbing" onPointerDown={(e) => drag.start(e)}>
+              <div className="h-1.5 w-12 rounded-full bg-handle" />
             </div>
             {title && (
               <div className="shrink-0 touch-none px-gutter pb-4" onPointerDown={(e) => drag.start(e)}>
@@ -67,7 +67,7 @@ export function BottomSheet({ open, onClose, title, children, maxHeight = '88%',
               </div>
             )}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
-            {footer && <div className="shrink-0 border-t border-line-soft px-gutter pt-3 pb-safe">{footer}</div>}
+            {footer && <div className="shrink-0 border-t border-line-soft px-gutter pt-4 pb-safe">{footer}</div>}
           </motion.div>
         </div>
       )}

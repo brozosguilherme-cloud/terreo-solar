@@ -1,191 +1,165 @@
-# AppNix — Spec de Design
+# 🎨 Guia de Design & Sistema Visual — AppNix
 
-Referência única para quem desenha ou codifica telas do AppNix. Os tokens moram em `src/index.css` (bloco `@theme` + utilitários `type-*`) e os componentes base em `src/components/ui.tsx`.
+Este é o guia oficial **"Warm Nomad & Playful Travel"**, mapeado para o código. Os tokens estão em `src/index.css` (`@theme` + utilitários `type-*`) e os componentes em `src/components/ui.tsx`.
 
-> **Direção atual: "Calma".** Muito respiro, pouca cor e pouca informação por bloco. O laranja aparece só na ação principal e no progresso. Listas usam linhas com divisores, não pilhas de cards. Cards são planos, com contorno fino.
-
-> **Regra de ouro:** nenhuma tela usa px, hex ou tamanho de fonte avulso. Se um valor não existe aqui, ou ele vira token, ou o desenho se ajusta ao token mais próximo.
+> **Regra de ouro:** as telas usam só tokens e componentes daqui. Se um valor não existe, ele vira token ou o desenho se ajusta ao mais próximo.
 
 ---
 
-## 1. Princípios
+## 1. Filosofia
 
-1. **Uma ação principal por tela.** Ela é sempre o botão laranja (`Button` primary). Ações secundárias são brancas com borda, e terciárias são ghost ou link.
-2. **O usuário nunca fica sem saber o que falta.** Botão desativado vem com uma frase dizendo o motivo (ex.: "Aproxime-se: faltam 120 m"). Validações aparecem embaixo do campo, nunca só como toast.
-3. **Hierarquia por tamanho e peso, não por cor.** Texto principal em `ink` e secundário em `muted`. Laranja é para ação e destaque, nunca para texto corrido.
-4. **Respiro generoso e previsível.** Toda tela tem a mesma margem lateral (24), o mesmo espaço entre seções (40) e o mesmo padding de card (20).
-5. **Carregamento com forma.** Listas carregando mostram skeletons com o formato do conteúdo, não um spinner solto.
-6. **Uma informação de cada vez.** Um item de lista mostra título e uma linha de detalhe. Categoria, visitas, prazo e descrição ficam na tela de detalhe. Não repita a mesma informação em dois lugares do mesmo bloco.
-7. **Cor é exceção.** Fundos são off-white e brancos. Categorias aparecem como tom suave com ícone fino, nunca como gradiente saturado. Sem blocos escuros, exceto toasts.
+- **Acolhedor e curado.** Tons quentes (laranja terra e âmbar dourado) sobre fundo quase branco `#FAFAFA`, com a sensação de um guia de viagens premium.
+- **Formas orgânicas e confortáveis.** Cantos de 24 a 36 px, cards sem bordas pesadas, sombras difusas.
+- **Micro-interações vivas.**
+  - Tudo encolhe ao toque (`active:scale-95`; em cards, `active:scale-[0.98]`).
+  - A tab bar desliza com uma pílula elástica.
+  - O kudos dá um "pop" ao ser tocado.
+  - O check-in explode em confetes.
 
----
+Regras de clareza que valem junto:
 
-## 2. Tipografia
-
-Duas famílias, com papéis fixos:
-
-- **Outfit** é para títulos e marca (peso 600/700).
-- **Inter** é para todo o resto, incluindo números, badges, botões e metadados (peso 400/500/600).
-
-| Token | Família | Tamanho/linha | Peso | Uso |
-|---|---|---|---|---|
-| `type-display` | Outfit | 32/38 | 700 | Hero do login, sucesso do check-in, splash |
-| `type-title1` | Outfit | 28/34 | 600 | Título de tela (`ScreenHeader`), título de missão no sheet |
-| `type-title2` | Outfit | 20/26 | 600 | Título de seção, título de bottom sheet, nome no perfil |
-| `type-title3` | Outfit | 17/22 | 500 | Título de card (missão, trilha, post, etapa) |
-| `type-body` | Inter | 15/24 | 400 | Texto corrido, descrições, legendas de post |
-| `type-body-strong` | Inter | 15/22 | 500 | Nome em linha de lista, label de botão grande |
-| `type-callout` | Inter | 14/20 | 400 | Subtítulos, textos de apoio, comentários |
-| `type-label` | Inter | 14/20 | 500 | Botões médios, chips, abas, banners de status |
-| `type-caption` | Inter | 13/18 | 400 | Metadados (distância, tempo, contadores) |
-| `type-overline` | Inter | 11/14 | 600, CAIXA ALTA, +6% | Categoria, "NÍVEL 3", rótulos de grupo |
-| `type-stat` | Inter | 22/28 | 500, tabular | Números de estatística (pontos, missões) |
-| `type-number` | Inter | herda | 600, tabular | Modificador para qualquer número que muda |
-
-Regras:
-
-- Números que mudam (pontos, contadores, ranking) sempre usam `tabular-nums` (`type-number` ou `type-stat`), para não "pular" de largura.
-- Não use opacidade em texto (`text-ink/80`). Para hierarquia, use `text-ink` ou `text-muted`. Sobre fundo escuro, use `text-white` e `text-white/60`.
-- Máximo de **3 níveis tipográficos por card**: título, corpo e metadado.
+- Uma ação principal (laranja) por tela.
+- Botão desabilitado sempre diz o motivo (ex.: "Aproxime-se: faltam 120 m").
+- Uma informação aparece uma vez por bloco, sem repetição.
 
 ---
 
-## 3. Cores
+## 2. Paleta & tokens
 
-### Marca
-| Token | Hex | Uso |
+| Token | Hex | Classe | Uso |
+|---|---|---|---|
+| Primary | `#E9A34D` | `bg-primary` · `text-primary` | Botões principais, ícone ativo na tab bar, destaques |
+| Primary strong | `#C9842F` | `text-primary-strong` | Texto laranja **pequeno** sobre branco (overline, tags), para garantir contraste |
+| Secondary | `#FFF6EE` | `bg-secondary` | Fundo de tags e badges suaves, hero do perfil |
+| Accent | `#FFD166` | `bg-accent` | Pontos/XP (`PointsPill`), estrelas, fim do gradiente de progresso |
+| Success | `#00D084` | `bg-success` | Check-in confirmado, "Concluída" |
+| Background | `#FAFAFA` | `bg-bg` | Fundo geral |
+| Surface | `#FFFFFF` | `bg-surface` | Cards, modais, sheets |
+| Text (Carbon) | `#222222` | `text-ink` | Títulos e textos de alto contraste |
+| Muted | `#717171` | `text-muted` | Subtítulos, distâncias, timestamps |
+| Border | `#DDDDDD` | `border-line` (`/50`, `/80`) | Divisórias e bordas finas |
+| Desabilitado | `#F4F4F5` / `#A1A1AA` / `#E4E4E7` | `disabled-bg` / `disabled-ink` / `disabled-line` | Botão fora do raio etc. |
+| Pódio | `#F59E0B` / `#94A3B8` / `#D97706` | `gold` / `silver` / `bronze` | 1º, 2º e 3º lugares |
+
+Semânticas em par (fundo suave + tinta legível): `success-soft`/`success-ink` e `danger-soft`/`danger-ink`. O ponto de não lido usa `danger` (`#EF4444`).
+
+As categorias usam tons suaves só nas miniaturas sem foto: turismo `#FFF1DE`, gastronomia `#FDE8E2`, explorador `#DFF3EC`, com o ícone na cor da categoria. A **tag** de categoria é sempre `bg-secondary` + `text-primary-strong`, igual para todas.
+
+---
+
+## 3. Tipografia
+
+- **Outfit:** títulos e logotipo.
+- **Inter:** corpo e números.
+
+As duas vêm empacotadas no app via `@fontsource-variable` (mesmos pesos do Google Fonts), para o APK funcionar offline.
+
+| Papel no guia | Token | Especificação |
 |---|---|---|
-| `primary` | `#E9A34D` | Ação principal, FAB, progresso, indicador ativo |
-| `primary-strong` | `#C9842F` | Texto e ícone laranja sobre fundo claro (contraste AA) |
-| `secondary` | `#FFF6EE` | Fundos suaves, hero blocks, item ativo da nav |
-| `accent` | `#FFD166` | Pontos e recompensas (`PointsPill`), coroa, nível alto |
-| `success` | `#00D084` | Concluído, check-in feito, aceitar |
-
-### Neutros
-| Token | Hex | Uso |
-|---|---|---|
-| `bg` | `#FCFBF9` | Fundo de tela (off-white quente) |
-| `surface` | `#FFFFFF` | Cards, sheets, inputs |
-| `surface-muted` | `#F5F3F0` | Trilho de progresso, segmentado, botão desativado, skeleton |
-| `ink` | `#222222` | Texto principal, chip ativo, card de nível |
-| `muted` | `#8A8580` | Texto secundário, ícones inativos |
-| `line` | `#DDDDDD` | Borda de input e de botão secundário |
-| `line-soft` | `#EFECE8` | Divisores de lista e contorno de cards |
-
-### Semânticas (sempre em par: fundo suave + tinta legível)
-| Par | Uso |
-|---|---|
-| `success-soft` / `success-ink` | "Você está no local", "No raio", concluída |
-| `danger-soft` / `danger-ink` | Fora do raio, excluir, erros de campo |
-| `secondary` / `ink` | Aviso neutro de marca (`StatusBanner tone="brand"`) |
-
-### Categorias
-| Categoria | Cor | Suave |
-|---|---|---|
-| Turismo | `turismo` `#E9A34D` | `turismo-soft` |
-| Gastronomia | `gastronomia` `#E5735A` | `gastronomia-soft` |
-| Explorador | `explorador` `#3FA58A` | `explorador-soft` |
-
-Imagens sem foto usam o **tom suave** da categoria com o ícone fino na cor da categoria (`MissionImage`).
+| Logo / Brand | `type-logo` | Outfit 24/32, 800, tracking-tight |
+| Hero (login, sucesso) | `type-display` | Outfit 32/38, 700 |
+| Cabeçalho de tela (H1) | `type-title1` | Outfit 24/32, 700, tracking-tight. Ex.: "Olá, Guilherme", "Comunidade" |
+| Título de seção / sheet | `type-title2` | Outfit 20/28, 700 |
+| Título de card (H2) | `type-title3` (+ `leading-snug`) | Outfit 18/24, 700 |
+| Corpo | `type-body` / `type-body-strong` | Inter 15/22, 400 / 600 |
+| Apoio | `type-callout` | Inter 14/20, 400 |
+| Botões | `type-label` | Inter 14/20, 700 (bold, text-sm) |
+| Subtítulo / muted | `type-caption` | Inter 12/16, 500, tracking-wide |
+| Overline / categoria | `type-overline` | Inter 11/14, 700, caixa alta, tracking-widest, `text-primary-strong` |
+| Tag de categoria | `type-tag` | Inter 10/14, 700, caixa alta, tracking-wider |
+| Pontos / badges | `type-points` | Inter 14/20, **900**, tracking-tight, tabular |
+| Estatística | `type-stat` | Inter 22/28, 900, tabular |
 
 ---
 
-## 4. Espaçamento
-
-Grid de **4 pt**. Use só estes valores: **4 · 8 · 12 · 16 · 20 · 24 · 32 · 40**.
-
-| Token | Valor | Onde |
-|---|---|---|
-| `gutter` (`px-gutter`) | 24 | Margem lateral de **toda** tela, header, sheet e lista |
-| `card` (`p-card`) | 20 | Padding interno de cards |
-| `section` (`mt-section`, `space-y-section`) | 40 | Entre seções de uma tela |
-| `nav` (`pb-nav`) | 120 | Respiro no fim de telas roláveis (bottom nav flutuante) |
-
-Ritmo vertical padrão de uma tela:
-
-```
-safe-area + 16      ← pt-safe
-Header (título 28)
-24                  ← pb-6 do ScreenHeader
-Progresso / bloco principal (linha fina, sem card)
-32                  ← entre bloco e filtros
-Filtros (chips de texto, 36)
-40                  ← mt-section
-Título de seção (20)
-16                  ← mb-4
-Lista (linhas de 16 px verticais separadas por divisor)
-120                 ← pb-nav
-```
-
-Dentro de cards: 12 entre grupos e 4–8 entre linhas de um mesmo grupo.
-
----
-
-## 5. Raios e elevação
+## 4. Espaçamento, raios e sombras
 
 | Token | Valor | Uso |
 |---|---|---|
-| `rounded-control` | 16 | Botões, inputs, icon buttons, thumbnails, banners |
-| `rounded-card` | 24 | Cards, linhas de lista com fundo, blocos |
-| `rounded-sheet` | 32 | Bottom sheets, hero blocks (topo/fundo), bottom nav |
-| `rounded-full` | — | Chips, pills, avatares, botões `sm` |
+| `px-gutter` | 20 | Margem lateral de todas as telas e sheets |
+| `p-card` / `p-5` | 20 | Padding do card-nomad |
+| `section` | 32 | Entre seções |
+| `pb-nav` | 128 (`pb-32`) | Fim das telas roláveis. A tab bar flutua a 24 px da borda |
+| `rounded-control` | 16 (`rounded-2xl`) | Botões, inputs |
+| `rounded-photo` | 20 | Fotos do feed |
+| `rounded-card` | 24 | Cards |
+| `rounded-sheet` | 32 | Tab bar, hero do perfil |
+| `rounded-modal` | 36 | Topo do bottom sheet |
+| `shadow-card` | borda `#DDD`/50 + `0 4px 20px rgba(0,0,0,.03)` | card-nomad |
+| `shadow-card-hover` | borda + `0 8px 30px rgba(0,0,0,.06)` | Hover de card clicável |
+| `shadow-float` | borda `zinc-200/80` + `0 12px 40px rgba(0,0,0,.12)` | Tab bar, card do mapa |
+| `shadow-primary` | `shadow-lg` primary/20 | Botão primário |
 
-| Sombra | Uso |
+---
+
+## 5. Componentes
+
+**A. Tab bar flutuante (`BottomNav`)**
+- Centralizada a 24 px da borda (+ safe area): `bg-white/95`, `backdrop-blur-xl`, `rounded-[32px]`, `p-2`, `gap-2`, `shadow-float`.
+- Pílula ativa `motion.div layoutId="active-nav-pill"` em `bg-primary/10 rounded-[24px]`.
+- O ativo expande para **72 px**, com ícone e rótulo laranja. Os inativos ficam com **54 px**, só ícone.
+- O check-in é um botão laranja fixo de 54 px.
+
+**B. Card de missão e trilha (card-nomad)**
+- `rounded-card bg-surface shadow-card`, hover mais profundo e `active:scale-[0.98]` (classe `cardInteractive`).
+- Missão: miniatura 64 + `CategoryTag` + `PointsPill`, título `type-title3`, uma linha de metadados.
+- Trilha: banner suave com "+N bônus", título, descrição `line-clamp-2` e progresso com gradiente primary → accent.
+
+**C. Botões (`Button`)**
+
+| Variante | Estilo |
 |---|---|
-| `shadow-card` | Contorno fino de 1 px (`line-soft`), sem sombra: cards planos |
-| `shadow-float` | Contorno + sombra leve: bottom nav, sheets, card do mapa |
-| `shadow-primary` | Só no botão primário e no FAB |
+| Primário | `bg-primary text-white`, bold sm, `h-13 rounded-2xl`, `shadow-primary`, `hover:brightness-105`, `active:scale-95` |
+| Secundário / cancelar | `bg-white border-line/80`, `hover:bg-surface-muted` |
+| Desabilitado | `bg-disabled-bg text-disabled-ink border-disabled-line`, `cursor-not-allowed` |
 
-Card com sombra **não** tem borda. Borda é para inputs, botões secundários e itens selecionáveis dentro de sheets.
+Tamanhos: `lg` 52 · `md` 44 · `sm` 36 (pill).
 
----
+**D. Bottom sheet (`BottomSheet`)**
+- Backdrop `bg-black/40` com blur leve.
+- Folha com `max-h 85%`, `rounded-t-[36px]`, `shadow-sheet`.
+- Puxador `w-12 h-1.5 bg-handle rounded-full`.
+- Fecha ao arrastar para baixo, ao tocar fora ou com Esc. Ações ficam no rodapé fixo.
 
-## 6. Componentes
+**E. Avatar com anel de nível (`Avatar`)**
+- Circular, `border-2 border-white shadow-sm`, inicial quando não há foto.
+- Anel de progresso do XP em **gradiente primary → accent**.
+- Tamanhos 32 · 40 · 48 · 64 · 96.
 
-| Componente | Especificação |
-|---|---|
-| `Button` | Alturas `lg` 52 · `md` 44 · `sm` 36 (pill). Ícone 20/16/16. Variantes `primary`, `secondary`, `ghost`, `danger`, `dark`. Desativado fica sólido em `surface-muted` + `muted`, nunca transparente. |
-| `IconButton` | Área de 44×44, sem moldura (só o ícone). `label` obrigatório. Badge vira um ponto laranja de 8 px. |
-| `Chip` | Altura 36, pill, sem borda. Ativo: fundo `secondary` e texto `ink`. Inativo: só texto `muted`. |
-| `Segmented` | Pill, trilho `surface-muted`, altura 44. Indicador branco animado. No máximo **um** por tela; para filtros secundários use `Chip`. |
-| `Input` | Altura 52, `rounded-control`, borda `line`. Foco: borda `primary` + anel de 4 px `primary/15`. Erro: borda `danger` e mensagem `type-caption` `danger-ink` abaixo. |
-| `ScreenHeader` | Título `type-title1` + subtítulo `type-callout`. `leading` (voltar) e `trailing` (avatar/ação) são opcionais. |
-| `SectionHeader` | `type-title2` à esquerda, contagem `type-callout` `muted` à direita. |
-| `Card` | `surface`, `rounded-card`, `shadow-card`, `p-card`. |
-| `MissionCard` (linha) | Miniatura 56 em tom suave, título (`body-strong`) e **uma** linha de detalhe ("4 m · 300 pts"). Chevron discreto. Visitado: título `muted` e selo verde suave. |
-| `StatusBanner` | `rounded-control`, `type-label`, ícone 16. Tons `success`, `danger`, `neutral`, `brand`. |
-| `PointsPill` | Altura 24, `secondary` com texto `primary-strong`. Prefira texto simples ("300 pts") em listas. |
-| `Avatar` | Tamanhos **32 · 40 · 48 · 64 · 96**. Anel de progresso do nível (laranja; dourado do nível 7 em diante). Sem foto, mostra a inicial. |
-| `BottomSheet` | `rounded-sheet` no topo, puxador 40×4, título `type-title2`, rodapé fixo para ações. Fecha ao arrastar, ao tocar fora ou com Esc. |
-| `BottomNav` | Pill flutuante branca com contorno. 4 abas + botão central de check-in (48, laranja). Ícones com traço 1,5 (2 quando ativo). Labels de 11 px/500, com uma palavra só. Ativo: pill `surface-muted`. |
-| `Skeleton` | `surface-muted` com brilho. Mesmo formato do conteúdo final. |
-
-Ícones (lucide): **16** inline com texto · **20** padrão em botões e nav · **24** destaque. Traço padrão.
+**F. Outros**
+- `IconButton`: redondo de 44 px, branco, ponto vermelho de não lido.
+- `Chip`: pílula de filtro.
+- `Segmented`: abas com pílula elástica.
+- `StatusBanner`: estado inline.
+- `Skeleton`: carregamento.
+- `EmptyState`: estado vazio.
 
 ---
 
-## 7. Padrões de UX
+## 6. Padrões de layout
 
-- **Check-in em 3 etapas numeradas:** 1 Local, 2 Foto (opcional), 3 Avaliação. Cada etapa vira um check verde quando completa. O botão "Confirmar" fica fixo acima da nav, com a frase do que falta.
-- **Estados de distância:** verde "Você está no local (12 m)" e vermelho "Você está a 1,2 km. Libera a até 150 m". Nunca bloqueie sem dizer a distância.
-- **Toques:** área mínima 44×44, `active:scale-[0.97]` em botões, vibração curta no kudos.
-- **Movimento:** 150–250 ms. Sheets usam spring (damping 32). Listas entram com fade + 8–12 px. Respeite `prefers-reduced-motion`.
-- **Feedback:**
-  - toast para resultado de ação (sucesso ou erro de rede);
-  - banner inline para estado persistente;
-  - mensagem sob o campo para validação.
-- **Vazio:** ícone em quadrado `secondary` 64, título `type-title3`, texto `type-callout`, e uma ação quando houver.
-- **Escrita:** português direto, segunda pessoa ("Você está no local"), verbos nos botões ("Fazer check-in", "Traçar rota"), sem jargão técnico.
+- **Header padrão (Home):** "Olá, Guilherme" (`type-title1`) com o título de nível em `type-caption` muted abaixo. Sino com ponto vermelho e avatar com anel à direita.
+- **Filtros por pílulas:** `overflow-x-auto no-scrollbar flex gap-2 py-2`.
+  - Selecionada: `bg-ink text-white rounded-full px-4 py-2 text-xs font-semibold`.
+  - Não selecionada: `bg-white border-line text-muted text-xs font-medium hover:border-ink`.
+- **Feed social:** posts em card-nomad, foto **4:5** com `rounded-photo` (20).
+  - Kudos com `whileTap={{ scale: 1.2 }}`.
+  - Curtido: `bg-primary/10 text-primary` com brilho suave.
+- **Ranking / pódio:**
+  - Colunas de alturas diferentes: 1º no centro e mais alto, 2º à esquerda, 3º à direita.
+  - Coroas e cores metálicas (ouro, prata e bronze).
+  - O restante em cards, com "(você)" destacado por anel laranja.
+- **Check-in:** 3 etapas em cards numerados (Local, Foto, Avaliação). O botão "Confirmar" fica fixo acima da tab bar, com a frase do que falta.
 
 ---
 
-## 8. Checklist para novas telas
+## 7. Checklist de qualidade visual
 
-- [ ] Usa `ScreenHeader` (ou header equivalente com `pt-safe` e `px-gutter`).
-- [ ] Margem lateral `px-gutter`, seções separadas por `section`, fim com `pb-nav`.
-- [ ] Só tokens `type-*`, sem `text-sm`, `text-[Npx]` ou `font-bold` avulsos.
-- [ ] Só raios `control`, `card`, `sheet` ou `full`.
-- [ ] Cores por token, sem hex nos componentes (exceção: canvas e confete).
-- [ ] Uma ação primária. Desativada, sempre explica o motivo.
-- [ ] Estado de carregamento (skeleton), estado vazio e estado de erro desenhados.
+- [ ] Nada de bordas pretas rígidas: use `border-line/50` (ou `shadow-card`) com sombras sutis.
+- [ ] Todo elemento tocável tem `active:scale-95` (cards: `active:scale-[0.98]`).
+- [ ] Telas roláveis terminam com `pb-nav` (128 px): nada fica escondido atrás da tab bar.
+- [ ] Sem rolagem horizontal indesejada: `body` com `overflow-x-hidden`, chips com `no-scrollbar`.
+- [ ] Só tokens `type-*`, raios do guia e cores por token (exceção: canvas do mapa e confete).
+- [ ] Uma ação primária por tela. Desabilitada, sempre explica o motivo.
+- [ ] Estados de carregamento (skeleton), vazio e erro desenhados.
 - [ ] Alvos de toque de 44 px ou mais e `aria-label` em botões só com ícone.

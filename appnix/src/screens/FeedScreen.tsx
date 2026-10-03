@@ -41,15 +41,15 @@ export function FeedScreen() {
 
 function PostSkeleton() {
   return (
-    <div className="py-6">
-      <div className="flex items-center gap-3 pb-4">
-        <Skeleton className="size-8 rounded-full" />
+    <div className="rounded-card bg-surface p-4 shadow-card">
+      <div className="flex items-center gap-3 pb-3">
+        <Skeleton className="size-10 rounded-full" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-3.5 w-32 rounded-full" />
           <Skeleton className="h-3 w-24 rounded-full" />
         </div>
       </div>
-      <Skeleton className="aspect-[4/3] w-full rounded-card" />
+      <Skeleton className="aspect-[4/5] w-full rounded-photo" />
       <div className="space-y-2 pt-4">
         <Skeleton className="h-3.5 w-3/4 rounded-full" />
         <Skeleton className="h-3.5 w-1/2 rounded-full" />
@@ -64,7 +64,7 @@ export function FeedList({ events, emptyAction }: { events: FeedEvent[] | null; 
 
   if (!events)
     return (
-      <div>
+      <div className="space-y-4">
         <PostSkeleton />
         <PostSkeleton />
       </div>
@@ -72,7 +72,7 @@ export function FeedList({ events, emptyAction }: { events: FeedEvent[] | null; 
   if (!events.length) return <EmptyState icon={Newspaper} title="Nenhuma publicação ainda" text="Os check-ins aparecem aqui com foto, avaliação e dicas." action={emptyAction} />;
 
   return (
-    <div className="divide-y divide-line-soft">
+    <div className="space-y-4">
       <AnimatePresence initial={false}>
         {events.map((e) => (
           <FeedPost key={e.id} event={e} onComments={() => setCommentsFor(e.id)} />
@@ -121,13 +121,13 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
   };
 
   return (
-    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} className="py-6 first:pt-0">
+    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} className="rounded-card bg-surface p-4 shadow-card">
       {/* autor */}
-      <div className="flex items-center gap-3 pb-4">
-        <Avatar src={event.userAvatar} name={event.userName} size={32} ring={false} />
+      <div className="flex items-center gap-3 pb-3">
+        <Avatar src={event.userAvatar} name={event.userName} size={40} ring={false} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <span className="truncate type-label">{event.userName}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="truncate type-body-strong">{event.userName}</span>
             {event.userLevel && <LevelBadge level={event.userLevel} />}
           </div>
           <p className="truncate type-caption text-muted">
@@ -160,7 +160,7 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
 
       {/* mídia */}
       {event.type === 'mission' ? (
-        <div className="flex items-center gap-4 rounded-card bg-secondary p-5">
+        <div className="flex items-center gap-4 rounded-photo bg-secondary p-5">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface">
             <Trophy className="size-5 text-primary" strokeWidth={1.5} />
           </div>
@@ -170,11 +170,11 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
           </div>
         </div>
       ) : (
-        event.imageUrl && <img src={event.imageUrl} alt={`Foto em ${event.missionTitle}`} className="aspect-[4/3] w-full rounded-card object-cover" loading="lazy" onDoubleClick={() => !liked && kudos()} />
+        event.imageUrl && <img src={event.imageUrl} alt={`Foto em ${event.missionTitle}`} className="aspect-[4/5] w-full rounded-photo object-cover" loading="lazy" onDoubleClick={() => !liked && kudos()} />
       )}
 
       {/* conteúdo */}
-      <div className={event.type === 'mission' || event.imageUrl ? 'pt-4' : ''}>
+      <div className={event.type === 'mission' || event.imageUrl ? 'px-1 pt-4' : 'px-1'}>
         {event.type === 'checkin' && (
           <div className="flex items-center justify-between gap-3">
             <span className="truncate type-title3">{event.missionTitle}</span>
@@ -183,11 +183,11 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
         )}
         {event.content && <p className={cn('type-body', event.type === 'checkin' ? 'mt-1' : 'mt-3 text-muted')}>{event.content}</p>}
 
-        <div className="mt-3 -ml-2 flex items-center gap-1">
+        <div className="mt-4 flex items-center gap-2">
           <motion.button
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 1.2 }}
             onClick={kudos}
-            className={cn('flex h-9 items-center gap-1.5 rounded-full px-2 type-caption transition-colors', liked ? 'text-danger' : 'text-muted')}
+            className={cn('flex h-9 items-center gap-1.5 rounded-full px-3.5 type-points transition-all', liked ? 'bg-primary/10 text-primary shadow-[0_0_16px_rgb(233_163_77/0.35)]' : 'bg-surface-muted text-muted')}
             aria-pressed={liked}
             aria-label={`Kudos, ${count}`}
           >
@@ -196,7 +196,7 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
             </motion.span>
             <span className="type-number">{count}</span>
           </motion.button>
-          <button onClick={onComments} className="flex h-9 items-center gap-1.5 rounded-full px-2 type-caption text-muted" aria-label={`Comentários, ${event.commentsCount}`}>
+          <button onClick={onComments} className="flex h-9 items-center gap-1.5 rounded-full bg-surface-muted px-3.5 type-points text-muted transition-all active:scale-95" aria-label={`Comentários, ${event.commentsCount}`}>
             <MessageCircle className="size-4.5" strokeWidth={1.75} /> <span className="type-number">{event.commentsCount}</span>
           </button>
         </div>
