@@ -2,6 +2,8 @@
 
 Referência única para quem desenha ou codifica telas do AppNix. Os tokens moram em `src/index.css` (bloco `@theme` + utilitários `type-*`) e os componentes base em `src/components/ui.tsx`.
 
+> **Direção atual: "Calma".** Muito respiro, pouca cor e pouca informação por bloco. O laranja aparece só na ação principal e no progresso. Listas usam linhas com divisores, não pilhas de cards. Cards são planos, com contorno fino.
+
 > **Regra de ouro:** nenhuma tela usa px, hex ou tamanho de fonte avulso. Se um valor não existe aqui, ou ele vira token, ou o desenho se ajusta ao token mais próximo.
 
 ---
@@ -11,8 +13,10 @@ Referência única para quem desenha ou codifica telas do AppNix. Os tokens mora
 1. **Uma ação principal por tela.** Ela é sempre o botão laranja (`Button` primary). Ações secundárias são brancas com borda, e terciárias são ghost ou link.
 2. **O usuário nunca fica sem saber o que falta.** Botão desativado vem com uma frase dizendo o motivo (ex.: "Aproxime-se: faltam 120 m"). Validações aparecem embaixo do campo, nunca só como toast.
 3. **Hierarquia por tamanho e peso, não por cor.** Texto principal em `ink` e secundário em `muted`. Laranja é para ação e destaque, nunca para texto corrido.
-4. **Respiro generoso e previsível.** Toda tela tem a mesma margem lateral (20), o mesmo espaço entre seções (32) e o mesmo padding de card (16).
+4. **Respiro generoso e previsível.** Toda tela tem a mesma margem lateral (24), o mesmo espaço entre seções (40) e o mesmo padding de card (20).
 5. **Carregamento com forma.** Listas carregando mostram skeletons com o formato do conteúdo, não um spinner solto.
+6. **Uma informação de cada vez.** Um item de lista mostra título e uma linha de detalhe. Categoria, visitas, prazo e descrição ficam na tela de detalhe. Não repita a mesma informação em dois lugares do mesmo bloco.
+7. **Cor é exceção.** Fundos são off-white e brancos. Categorias aparecem como tom suave com ícone fino, nunca como gradiente saturado. Sem blocos escuros, exceto toasts.
 
 ---
 
@@ -26,16 +30,16 @@ Duas famílias, com papéis fixos:
 | Token | Família | Tamanho/linha | Peso | Uso |
 |---|---|---|---|---|
 | `type-display` | Outfit | 32/38 | 700 | Hero do login, sucesso do check-in, splash |
-| `type-title1` | Outfit | 28/34 | 700 | Título de tela (`ScreenHeader`), título de missão no sheet |
-| `type-title2` | Outfit | 22/28 | 600 | Título de seção, título de bottom sheet, nome no perfil |
-| `type-title3` | Outfit | 18/24 | 600 | Título de card (missão, trilha, post, etapa) |
-| `type-body` | Inter | 15/22 | 400 | Texto corrido, descrições, legendas de post |
-| `type-body-strong` | Inter | 15/22 | 600 | Nome em linha de lista, label de botão grande |
+| `type-title1` | Outfit | 28/34 | 600 | Título de tela (`ScreenHeader`), título de missão no sheet |
+| `type-title2` | Outfit | 20/26 | 600 | Título de seção, título de bottom sheet, nome no perfil |
+| `type-title3` | Outfit | 17/22 | 500 | Título de card (missão, trilha, post, etapa) |
+| `type-body` | Inter | 15/24 | 400 | Texto corrido, descrições, legendas de post |
+| `type-body-strong` | Inter | 15/22 | 500 | Nome em linha de lista, label de botão grande |
 | `type-callout` | Inter | 14/20 | 400 | Subtítulos, textos de apoio, comentários |
-| `type-label` | Inter | 14/20 | 600 | Botões médios, chips, abas, banners de status |
-| `type-caption` | Inter | 12/16 | 500 | Metadados (distância, tempo, contadores) |
+| `type-label` | Inter | 14/20 | 500 | Botões médios, chips, abas, banners de status |
+| `type-caption` | Inter | 13/18 | 400 | Metadados (distância, tempo, contadores) |
 | `type-overline` | Inter | 11/14 | 600, CAIXA ALTA, +6% | Categoria, "NÍVEL 3", rótulos de grupo |
-| `type-stat` | Inter | 20/28 | 600, tabular | Números de estatística (pontos, missões) |
+| `type-stat` | Inter | 22/28 | 500, tabular | Números de estatística (pontos, missões) |
 | `type-number` | Inter | herda | 600, tabular | Modificador para qualquer número que muda |
 
 Regras:
@@ -60,13 +64,13 @@ Regras:
 ### Neutros
 | Token | Hex | Uso |
 |---|---|---|
-| `bg` | `#FAFAFA` | Fundo de tela |
+| `bg` | `#FCFBF9` | Fundo de tela (off-white quente) |
 | `surface` | `#FFFFFF` | Cards, sheets, inputs |
-| `surface-muted` | `#F4EFE9` | Trilho de progresso, segmentado, botão desativado, skeleton |
+| `surface-muted` | `#F5F3F0` | Trilho de progresso, segmentado, botão desativado, skeleton |
 | `ink` | `#222222` | Texto principal, chip ativo, card de nível |
-| `muted` | `#717171` | Texto secundário, ícones inativos |
+| `muted` | `#8A8580` | Texto secundário, ícones inativos |
 | `line` | `#DDDDDD` | Borda de input e de botão secundário |
-| `line-soft` | `#EEEAE5` | Divisores e bordas de linhas de lista |
+| `line-soft` | `#EFECE8` | Divisores de lista e contorno de cards |
 
 ### Semânticas (sempre em par: fundo suave + tinta legível)
 | Par | Uso |
@@ -82,7 +86,7 @@ Regras:
 | Gastronomia | `gastronomia` `#E5735A` | `gastronomia-soft` |
 | Explorador | `explorador` `#3FA58A` | `explorador-soft` |
 
-Imagens sem foto usam o gradiente da categoria com o ícone em branco (`MissionImage`).
+Imagens sem foto usam o **tom suave** da categoria com o ícone fino na cor da categoria (`MissionImage`).
 
 ---
 
@@ -92,9 +96,9 @@ Grid de **4 pt**. Use só estes valores: **4 · 8 · 12 · 16 · 20 · 24 · 32 
 
 | Token | Valor | Onde |
 |---|---|---|
-| `gutter` (`px-gutter`) | 20 | Margem lateral de **toda** tela, header, sheet e lista |
-| `card` (`p-card`) | 16 | Padding interno de cards |
-| `section` (`mt-section`, `space-y-section`) | 32 | Entre seções de uma tela |
+| `gutter` (`px-gutter`) | 24 | Margem lateral de **toda** tela, header, sheet e lista |
+| `card` (`p-card`) | 20 | Padding interno de cards |
+| `section` (`mt-section`, `space-y-section`) | 40 | Entre seções de uma tela |
 | `nav` (`pb-nav`) | 120 | Respiro no fim de telas roláveis (bottom nav flutuante) |
 
 Ritmo vertical padrão de uma tela:
@@ -102,14 +106,14 @@ Ritmo vertical padrão de uma tela:
 ```
 safe-area + 16      ← pt-safe
 Header (título 28)
-20                  ← pb-5 do ScreenHeader
-Bloco principal / hero
-24                  ← entre hero e filtros
-Filtros (chips 40)
-32                  ← mt-section
-Título de seção (22)
-12                  ← mb-3
-Lista (cards com gap 12; linhas compactas com gap 8)
+24                  ← pb-6 do ScreenHeader
+Progresso / bloco principal (linha fina, sem card)
+32                  ← entre bloco e filtros
+Filtros (chips de texto, 36)
+40                  ← mt-section
+Título de seção (20)
+16                  ← mb-4
+Lista (linhas de 16 px verticais separadas por divisor)
 120                 ← pb-nav
 ```
 
@@ -128,8 +132,8 @@ Dentro de cards: 12 entre grupos e 4–8 entre linhas de um mesmo grupo.
 
 | Sombra | Uso |
 |---|---|
-| `shadow-card` | Cards e icon buttons sobre o fundo |
-| `shadow-float` | Elementos flutuantes: bottom nav, sheets, card do mapa, toasts |
+| `shadow-card` | Contorno fino de 1 px (`line-soft`), sem sombra: cards planos |
+| `shadow-float` | Contorno + sombra leve: bottom nav, sheets, card do mapa |
 | `shadow-primary` | Só no botão primário e no FAB |
 
 Card com sombra **não** tem borda. Borda é para inputs, botões secundários e itens selecionáveis dentro de sheets.
@@ -141,19 +145,19 @@ Card com sombra **não** tem borda. Borda é para inputs, botões secundários e
 | Componente | Especificação |
 |---|---|
 | `Button` | Alturas `lg` 52 · `md` 44 · `sm` 36 (pill). Ícone 20/16/16. Variantes `primary`, `secondary`, `ghost`, `danger`, `dark`. Desativado fica sólido em `surface-muted` + `muted`, nunca transparente. |
-| `IconButton` | 44×44, `rounded-control`, `surface` + `shadow-card`. `label` obrigatório. Badge numérico opcional. |
-| `Chip` | Altura 40, pill. Ativo: fundo `ink` e texto branco. Inativo: `surface` com borda `line`. Ícone 16 na cor da categoria. |
-| `Segmented` | Trilho `surface-muted`, altura 48 (40 + 4 + 4). Indicador branco animado (`layoutId`). |
+| `IconButton` | Área de 44×44, sem moldura (só o ícone). `label` obrigatório. Badge vira um ponto laranja de 8 px. |
+| `Chip` | Altura 36, pill, sem borda. Ativo: fundo `secondary` e texto `ink`. Inativo: só texto `muted`. |
+| `Segmented` | Pill, trilho `surface-muted`, altura 44. Indicador branco animado. No máximo **um** por tela; para filtros secundários use `Chip`. |
 | `Input` | Altura 52, `rounded-control`, borda `line`. Foco: borda `primary` + anel de 4 px `primary/15`. Erro: borda `danger` e mensagem `type-caption` `danger-ink` abaixo. |
 | `ScreenHeader` | Título `type-title1` + subtítulo `type-callout`. `leading` (voltar) e `trailing` (avatar/ação) são opcionais. |
 | `SectionHeader` | `type-title2` à esquerda, contagem `type-callout` `muted` à direita. |
 | `Card` | `surface`, `rounded-card`, `shadow-card`, `p-card`. |
-| `MissionCard` | Thumbnail 72 + categoria (overline) + pontos à direita, título (title3) e metadados (caption). Concluída fica com opacidade 70% e selo verde. |
+| `MissionCard` (linha) | Miniatura 56 em tom suave, título (`body-strong`) e **uma** linha de detalhe ("4 m · 300 pts"). Chevron discreto. Visitado: título `muted` e selo verde suave. |
 | `StatusBanner` | `rounded-control`, `type-label`, ícone 16. Tons `success`, `danger`, `neutral`, `brand`. |
-| `PointsPill` | Altura 28, `accent`, número tabular. "2x" em `ink`. |
+| `PointsPill` | Altura 24, `secondary` com texto `primary-strong`. Prefira texto simples ("300 pts") em listas. |
 | `Avatar` | Tamanhos **32 · 40 · 48 · 64 · 96**. Anel de progresso do nível (laranja; dourado do nível 7 em diante). Sem foto, mostra a inicial. |
 | `BottomSheet` | `rounded-sheet` no topo, puxador 40×4, título `type-title2`, rodapé fixo para ações. Fecha ao arrastar, ao tocar fora ou com Esc. |
-| `BottomNav` | Flutuante, `rounded-sheet`, blur. 4 abas + FAB central de check-in (56). Labels de 11 px/600, com uma palavra só. |
+| `BottomNav` | Pill flutuante branca com contorno. 4 abas + botão central de check-in (48, laranja). Ícones com traço 1,5 (2 quando ativo). Labels de 11 px/500, com uma palavra só. Ativo: pill `surface-muted`. |
 | `Skeleton` | `surface-muted` com brilho. Mesmo formato do conteúdo final. |
 
 Ícones (lucide): **16** inline com texto · **20** padrão em botões e nav · **24** destaque. Traço padrão.

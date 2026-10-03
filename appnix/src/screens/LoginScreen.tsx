@@ -99,9 +99,7 @@ export function LoginScreen() {
 
   return (
     <div className="h-full overflow-y-auto bg-bg no-scrollbar">
-      <div className="relative overflow-hidden rounded-b-sheet bg-secondary px-gutter pt-safe pb-8">
-        <div className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/15" />
-        <div className="absolute top-24 -left-10 size-24 rounded-full bg-accent/30" />
+      <div className="relative px-gutter pt-safe pb-4">
         <div className="relative mt-6 flex items-center gap-2">
           <div className="flex size-10 items-center justify-center rounded-control bg-primary">
             <Compass className="size-6 text-white" />

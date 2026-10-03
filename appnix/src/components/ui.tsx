@@ -45,8 +45,8 @@ export function Skeleton({ className }: { className?: string }) {
 export function EmptyState({ icon: Icon, title, text, action }: { icon: LucideIcon; title: string; text?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center px-8 py-10 text-center">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-card bg-secondary">
-        <Icon className="size-7 text-primary" />
+      <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-surface-muted">
+        <Icon className="size-6 text-muted" strokeWidth={1.5} />
       </div>
       <h3 className="type-title3">{title}</h3>
       {text && <p className="mt-1 type-callout text-muted">{text}</p>}
@@ -131,12 +131,10 @@ export function LinkButton({ href, children, className, size = 'lg' }: { href: s
 /** Botão quadrado de 44 px só com ícone. `label` é obrigatório (acessibilidade). */
 export function IconButton({ icon: Icon, label, onClick, badge, className, disabled }: { icon: LucideIcon; label: string; onClick?: () => void; badge?: number; className?: string; disabled?: boolean }) {
   return (
-    <button onClick={onClick} disabled={disabled} aria-label={label} className={cn('relative flex size-11 shrink-0 items-center justify-center rounded-control bg-surface shadow-card transition active:scale-95 disabled:opacity-40', className)}>
+    <button onClick={onClick} disabled={disabled} aria-label={label} className={cn('relative -m-2 flex size-11 shrink-0 items-center justify-center rounded-full text-ink transition active:bg-surface-muted disabled:opacity-40', className)}>
       <Icon className="size-5" />
       {!!badge && (
-        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 type-caption font-semibold text-white ring-2 ring-bg">
-          {badge > 9 ? '9+' : badge}
-        </span>
+        <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-primary ring-2 ring-bg" aria-hidden />
       )}
     </button>
   );
@@ -149,9 +147,9 @@ export function Chip({ active, onClick, icon: Icon, iconColor, children }: { act
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={cn('flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 type-label transition', active ? 'border-ink bg-ink text-white' : 'border-line bg-surface text-ink')}
+      className={cn('flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 type-label transition', active ? 'bg-secondary text-ink' : 'text-muted')}
     >
-      {Icon && <Icon className="size-4" style={{ color: active ? undefined : iconColor }} />}
+      {Icon && <Icon className="size-4" style={{ color: active ? iconColor : undefined }} />}
       {children}
     </button>
   );
@@ -160,12 +158,12 @@ export function Chip({ active, onClick, icon: Icon, iconColor, children }: { act
 /** Controle segmentado com indicador animado. */
 export function Segmented<T extends string>({ id, value, onChange, options, className }: { id: string; value: T; onChange: (v: T) => void; options: { value: T; label: string; icon?: LucideIcon }[]; className?: string }) {
   return (
-    <div className={cn('grid rounded-control bg-surface-muted p-1', className)} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }} role="tablist">
+    <div className={cn('grid rounded-full bg-surface-muted p-1', className)} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }} role="tablist">
       {options.map((o) => {
         const active = o.value === value;
         return (
-          <button key={o.value} role="tab" aria-selected={active} onClick={() => onChange(o.value)} className={cn('relative flex h-10 items-center justify-center gap-1.5 rounded-[12px] type-label transition-colors', active ? 'text-ink' : 'text-muted')}>
-            {active && <motion.div layoutId={`seg-${id}`} className="absolute inset-0 rounded-[12px] bg-surface shadow-card" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+          <button key={o.value} role="tab" aria-selected={active} onClick={() => onChange(o.value)} className={cn('relative flex h-9 items-center justify-center gap-1.5 rounded-full type-label transition-colors', active ? 'text-ink' : 'text-muted')}>
+            {active && <motion.div layoutId={`seg-${id}`} className="absolute inset-0 rounded-full bg-surface shadow-[0_1px_3px_rgb(34_34_34/0.08)]" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
             {o.icon && <o.icon className="relative size-4" />}
             <span className="relative">{o.label}</span>
           </button>
@@ -182,11 +180,11 @@ export function Segmented<T extends string>({ id, value, onChange, options, clas
 /** Cabeçalho padrão: título 28 px, subtítulo opcional e ações à direita. */
 export function ScreenHeader({ title, subtitle, leading, trailing }: { title: string; subtitle?: string; leading?: ReactNode; trailing?: ReactNode }) {
   return (
-    <header className="flex items-center gap-3 px-gutter pt-safe pb-5">
+    <header className="flex items-center gap-4 px-gutter pt-safe pb-6">
       {leading}
       <div className="min-w-0 flex-1">
         <h1 className="truncate type-title1">{title}</h1>
-        {subtitle && <p className="mt-0.5 truncate type-callout text-muted">{subtitle}</p>}
+        {subtitle && <p className="mt-1 truncate type-callout text-muted">{subtitle}</p>}
       </div>
       {trailing}
     </header>
@@ -195,7 +193,7 @@ export function ScreenHeader({ title, subtitle, leading, trailing }: { title: st
 
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
-    <div className="mb-3 flex items-center justify-between px-gutter">
+    <div className="mb-4 flex items-baseline justify-between px-gutter">
       <h2 className="type-title2">{title}</h2>
       {action && <div className="type-callout text-muted">{action}</div>}
     </div>
@@ -241,15 +239,15 @@ export function Avatar({ src, name, points, size = 40, ring = true }: { src?: st
 }
 
 export function LevelBadge({ level, className }: { level: number; className?: string }) {
-  return <span className={cn('inline-flex h-5 items-center rounded-full bg-secondary px-2 type-caption font-semibold text-primary-strong', className)}>Nv {level}</span>;
+  return <span className={cn('inline-flex items-center type-caption text-muted', className)}>· Nv {level}</span>;
 }
 
 export function PointsPill({ points, double, className }: { points: number; double?: boolean; className?: string }) {
   return (
-    <span className={cn('inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-accent px-2.5 type-caption font-semibold text-ink', className)}>
-      <Sparkles className="size-3.5" />
+    <span className={cn('inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 type-caption text-primary-strong', className)}>
+      <Sparkles className="size-3" />
       <span className="type-number">{double ? points * 2 : points}</span> pts
-      {double && <span className="ml-0.5 rounded-full bg-ink px-1.5 text-[10px] leading-4 text-accent">2x</span>}
+      {double && <span className="ml-0.5 font-semibold">· 2x</span>}
     </span>
   );
 }
@@ -285,10 +283,11 @@ export function MissionImage({ src, category, className, iconSize = 'size-10', d
   const meta = CATEGORY_META[category];
   const Icon = meta.icon;
   if (src) return <img src={src} alt="" loading="lazy" className={cn('object-cover', className)} />;
+  // direção calma: fundo suave da categoria + ícone fino colorido (sem gradiente saturado)
   return (
-    <div className={cn('relative flex items-center justify-center overflow-hidden', className)} style={{ background: meta.gradient }}>
-      {decor && <div className="absolute -right-6 -bottom-6 size-24 rounded-full bg-white/15" />}
-      <Icon className={cn('relative text-white', iconSize)} strokeWidth={1.75} />
+    <div className={cn('relative flex items-center justify-center overflow-hidden', className)} style={{ background: meta.soft }}>
+      {decor && <div className="absolute -right-8 -bottom-8 size-28 rounded-full bg-white/40" />}
+      <Icon className={cn('relative', iconSize)} style={{ color: meta.color }} strokeWidth={1.5} />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { Check, Crown, Search, Trophy, UserCheck, UserMinus, UserPlus, Users, X 
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { PullToRefresh } from '../components/PullToRefresh';
-import { Avatar, Button, Card, EmptyState, LevelBadge, ScreenHeader, Segmented, Skeleton, Spinner, cn } from '../components/ui';
+import { Avatar, Button, Card, Chip, EmptyState, ScreenHeader, Segmented, Skeleton, Spinner, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
 import { getUserLevelInfo } from '../lib/levels';
@@ -56,24 +56,22 @@ export function SocialScreen() {
 /* ------------------------------------------------------------------ */
 
 const PODIUM = [
-  { place: 2, ring: 'bg-silver', block: 'from-[#EEF1F4] to-[#D9DEE4]', h: 'h-20', label: 'Prata', size: 64 as const },
-  { place: 1, ring: 'bg-gold', block: 'from-[#FFF1C7] to-[#FFD166]', h: 'h-28', label: 'Ouro', size: 64 as const },
-  { place: 3, ring: 'bg-bronze', block: 'from-[#F8E2D1] to-[#E4B48E]', h: 'h-16', label: 'Bronze', size: 64 as const },
+  { place: 2, ring: 'bg-silver', label: 'Prata' },
+  { place: 1, ring: 'bg-gold', label: 'Ouro' },
+  { place: 3, ring: 'bg-bronze', label: 'Bronze' },
 ];
 
 function RankRow({ pos, entry, highlight, trailing }: { pos: number; entry: RankingEntry; highlight?: boolean; trailing?: ReactNode }) {
   return (
-    <div className={cn('flex items-center gap-3 rounded-card bg-surface p-3 shadow-card', highlight && 'ring-2 ring-primary')}>
-      <span className="w-6 text-center type-label type-number text-muted">{pos}</span>
+    <div className={cn('flex items-center gap-4 py-3.5', highlight && '-mx-3 rounded-control bg-secondary px-3')}>
+      <span className="w-5 text-center type-caption type-number text-muted">{pos}</span>
       <Avatar src={entry.avatarUrl} name={entry.name} size={40} ring={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate type-body-strong">{highlight ? `${entry.name} (você)` : entry.name}</p>
-        <LevelBadge level={entry.level} />
+        <p className="type-caption text-muted">Nível {entry.level}</p>
       </div>
       {trailing ?? (
-        <span className="type-body-strong type-number">
-          {formatPoints(entry.points)} <span className="type-caption text-muted">pts</span>
-        </span>
+        <span className="type-callout type-number text-muted">{formatPoints(entry.points)}</span>
       )}
     </div>
   );
@@ -86,20 +84,18 @@ function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | nul
 
   return (
     <div className="px-gutter">
-      <Segmented
-        id="period"
-        value={period}
-        onChange={setPeriod}
-        className="mx-auto w-56"
-        options={[
-          { value: 'weekly', label: 'Semana' },
-          { value: 'all', label: 'Geral' },
-        ]}
-      />
+      <div className="flex justify-center gap-1" role="tablist" aria-label="Período">
+        <Chip active={period === 'weekly'} onClick={() => setPeriod('weekly')}>
+          Esta semana
+        </Chip>
+        <Chip active={period === 'all'} onClick={() => setPeriod('all')}>
+          Geral
+        </Chip>
+      </div>
 
       {!ranking ? (
         <div className="mt-5 space-y-3">
-          <Skeleton className="h-64 w-full rounded-sheet" />
+          <Skeleton className="h-48 w-full rounded-card" />
           <Skeleton className="h-16 w-full rounded-card" />
           <Skeleton className="h-16 w-full rounded-card" />
         </div>
@@ -107,30 +103,29 @@ function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | nul
         <EmptyState icon={Trophy} title="Ranking vazio" text={period === 'weekly' ? 'Ninguém fez check-in esta semana. Seja o primeiro!' : 'Faça check-ins para aparecer aqui.'} />
       ) : (
         <>
-          {/* Pódio */}
-          <div className="mt-5 flex items-end gap-2 overflow-hidden rounded-sheet bg-secondary px-3 pt-8">
-            {PODIUM.map(({ place, ring, block, h, label, size }) => {
+          {/* Pódio — leve: avatares com anel fino da medalha, sem blocos coloridos */}
+          <div className="mt-8 grid grid-cols-3 items-end gap-2">
+            {PODIUM.map(({ place, ring, label }) => {
               const r = ranking[place - 1];
-              if (!r) return <div key={place} className="flex-1" />;
+              if (!r) return <div key={place} />;
               const isMe = r.userId === profile?.id;
               return (
-                <motion.div key={place} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: place * 0.08 }} className="flex min-w-0 flex-1 flex-col items-center">
-                  <div className="h-7">{place === 1 && <Crown className="size-7 fill-accent text-primary" />}</div>
-                  <div className={cn('rounded-full p-1', ring)}>
-                    <Avatar src={r.avatarUrl} name={r.name} size={size} ring={false} />
+                <motion.div key={place} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: place * 0.06 }} className={cn('flex min-w-0 flex-col items-center', place === 1 ? 'pb-6' : '')}>
+                  {place === 1 && <Crown className="mb-1 size-5 text-primary" strokeWidth={1.5} />}
+                  <div className={cn('rounded-full p-[3px]', ring)}>
+                    <div className="rounded-full bg-bg p-[2px]">
+                      <Avatar src={r.avatarUrl} name={r.name} size={place === 1 ? 64 : 48} ring={false} />
+                    </div>
                   </div>
-                  <p className="mt-2 w-full truncate text-center type-label">{isMe ? 'Você' : r.name.split(' ')[0]}</p>
-                  <p className="type-caption type-number text-primary-strong">{formatPoints(r.points)} pts</p>
-                  <div className={cn('mt-2 flex w-full flex-col items-center rounded-t-card bg-gradient-to-b pt-2', block, h)}>
-                    <span className="type-title2 type-number">{place}</span>
-                    <span className="type-overline text-ink/60">{label}</span>
-                  </div>
+                  <p className="mt-3 w-full truncate text-center type-label">{isMe ? 'Você' : r.name.split(' ')[0]}</p>
+                  <p className="type-caption type-number text-muted">{formatPoints(r.points)} pts</p>
+                  <p className="mt-1 type-caption text-muted">{place}º · {label}</p>
                 </motion.div>
               );
             })}
           </div>
 
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-8 divide-y divide-line-soft">
             {ranking.slice(3, VISIBLE).map((r, i) => (
               <motion.li key={r.userId} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i, 10) * 0.03 }}>
                 <RankRow pos={i + 4} entry={r} highlight={r.userId === profile?.id} />
@@ -157,7 +152,7 @@ function Ranking({ ranking, period, setPeriod }: { ranking: RankingEntry[] | nul
 
 function GroupTitle({ children, count }: { children: ReactNode; count?: number }) {
   return (
-    <h2 className="mb-3 flex items-center gap-2 type-title3">
+    <h2 className="mb-2 flex items-center gap-2 type-title3">
       {children}
       {count != null && count > 0 && <span className="rounded-full bg-primary px-2 type-caption font-semibold text-white">{count}</span>}
     </h2>
@@ -166,7 +161,7 @@ function GroupTitle({ children, count }: { children: ReactNode; count?: number }
 
 function PersonRow({ avatar, name, subtitle, children, tone = 'default' }: { avatar?: string; name: string; subtitle?: string; children?: ReactNode; tone?: 'default' | 'brand' }) {
   return (
-    <div className={cn('flex items-center gap-3 rounded-card p-3', tone === 'brand' ? 'bg-secondary' : 'bg-surface shadow-card')}>
+    <div className={cn('flex items-center gap-4', tone === 'brand' ? 'rounded-card bg-secondary p-3' : 'py-3')}>
       <Avatar src={avatar} name={name} size={40} ring={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate type-body-strong">{name}</p>
@@ -234,7 +229,7 @@ function Friends() {
         </label>
 
         {term.trim().length >= 2 && (
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 divide-y divide-line-soft">
             {results.length === 0 && !searching ? (
               <p className="py-4 text-center type-callout text-muted">Ninguém encontrado com “{term}”.</p>
             ) : (
@@ -291,7 +286,7 @@ function Friends() {
             <EmptyState icon={Users} title="Explore em grupo" text="Busque exploradores pelo nome e envie solicitações de amizade." />
           </Card>
         ) : (
-          <div className="space-y-2">
+          <div className="divide-y divide-line-soft">
             {friends.map((f) => {
               const o = other(f);
               return (

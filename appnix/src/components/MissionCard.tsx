@@ -1,49 +1,38 @@
-import { CheckCircle2, Clock, MapPin, Users } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Check, ChevronRight } from 'lucide-react';
 import { formatDistance } from '../lib/geo';
 import type { Mission } from '../services/types';
-import { CategoryLabel, Meta, MissionImage, PointsPill, Skeleton, cn } from './ui';
+import { MissionImage, Skeleton } from './ui';
 
+/** Linha de missão (direção calma): só título + uma linha de detalhe. O resto fica no detalhe. */
 export function MissionCard({ mission, distance, done, onClick }: { mission: Mission; distance: number | null; done: boolean; onClick: () => void }) {
+  const pts = mission.isDoublePoints ? mission.points * 2 : mission.points;
   return (
-    <motion.button
-      layout
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={cn('flex w-full items-center gap-3 rounded-card bg-surface p-3 text-left shadow-card', done && 'opacity-70')}
-    >
-      <div className="relative shrink-0">
-        <MissionImage src={mission.image} category={mission.category} className="size-18 rounded-control" iconSize="size-7" decor={false} />
-        {done && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-control bg-success/85">
-            <CheckCircle2 className="size-7 text-white" />
-          </div>
-        )}
+    <button onClick={onClick} className="flex w-full items-center gap-4 py-4 text-left transition active:opacity-60">
+      <MissionImage src={mission.image} category={mission.category} className="size-14 shrink-0 rounded-control" iconSize="size-6" decor={false} />
+      <div className="min-w-0 flex-1">
+        <h3 className={done ? 'truncate type-body-strong text-muted' : 'truncate type-body-strong'}>{mission.title}</h3>
+        <p className="mt-0.5 truncate type-caption text-muted">
+          {done ? 'Visitado' : `${formatDistance(distance)} · ${pts} pts${mission.isDoublePoints ? ' (2x)' : ''}`}
+        </p>
       </div>
-      <div className="min-w-0 flex-1 py-0.5">
-        <div className="flex items-center justify-between gap-2">
-          <CategoryLabel category={mission.category} />
-          <PointsPill points={mission.points} double={mission.isDoublePoints} />
-        </div>
-        <h3 className="mt-1 truncate type-title3">{mission.title}</h3>
-        <div className="mt-1 flex items-center gap-3">
-          <Meta icon={MapPin}>{formatDistance(distance)}</Meta>
-          <Meta icon={Users}>{mission.completions} visitas</Meta>
-          {mission.timeLimit && <Meta icon={Clock}>{mission.timeLimit}</Meta>}
-        </div>
-      </div>
-    </motion.button>
+      {done ? (
+        <span className="flex size-6 items-center justify-center rounded-full bg-success-soft">
+          <Check className="size-3.5 text-success-ink" />
+        </span>
+      ) : (
+        <ChevronRight className="size-4 text-line" />
+      )}
+    </button>
   );
 }
 
 export function MissionCardSkeleton() {
   return (
-    <div className="flex items-center gap-3 rounded-card bg-surface p-3 shadow-card">
-      <Skeleton className="size-18 rounded-control" />
+    <div className="flex items-center gap-4 py-4">
+      <Skeleton className="size-14 rounded-control" />
       <div className="flex-1 space-y-2">
-        <Skeleton className="h-3 w-20 rounded-full" />
-        <Skeleton className="h-4 w-40 rounded-full" />
-        <Skeleton className="h-3 w-28 rounded-full" />
+        <Skeleton className="h-3.5 w-40 rounded-full" />
+        <Skeleton className="h-3 w-24 rounded-full" />
       </div>
     </div>
   );

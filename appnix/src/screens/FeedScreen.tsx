@@ -41,16 +41,16 @@ export function FeedScreen() {
 
 function PostSkeleton() {
   return (
-    <div className="overflow-hidden rounded-card bg-surface shadow-card">
-      <div className="flex items-center gap-3 p-card">
-        <Skeleton className="size-10 rounded-full" />
+    <div className="py-6">
+      <div className="flex items-center gap-3 pb-4">
+        <Skeleton className="size-8 rounded-full" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-3.5 w-32 rounded-full" />
           <Skeleton className="h-3 w-24 rounded-full" />
         </div>
       </div>
-      <Skeleton className="aspect-[4/3] w-full" />
-      <div className="space-y-2 p-card">
+      <Skeleton className="aspect-[4/3] w-full rounded-card" />
+      <div className="space-y-2 pt-4">
         <Skeleton className="h-3.5 w-3/4 rounded-full" />
         <Skeleton className="h-3.5 w-1/2 rounded-full" />
       </div>
@@ -64,7 +64,7 @@ export function FeedList({ events, emptyAction }: { events: FeedEvent[] | null; 
 
   if (!events)
     return (
-      <div className="space-y-4">
+      <div>
         <PostSkeleton />
         <PostSkeleton />
       </div>
@@ -72,7 +72,7 @@ export function FeedList({ events, emptyAction }: { events: FeedEvent[] | null; 
   if (!events.length) return <EmptyState icon={Newspaper} title="Nenhuma publicação ainda" text="Os check-ins aparecem aqui com foto, avaliação e dicas." action={emptyAction} />;
 
   return (
-    <div className="space-y-4">
+    <div className="divide-y divide-line-soft">
       <AnimatePresence initial={false}>
         {events.map((e) => (
           <FeedPost key={e.id} event={e} onComments={() => setCommentsFor(e.id)} />
@@ -121,17 +121,17 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
   };
 
   return (
-    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} className="overflow-hidden rounded-card bg-surface shadow-card">
+    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} className="py-6 first:pt-0">
       {/* autor */}
-      <div className="flex items-center gap-3 px-card pt-card pb-3">
-        <Avatar src={event.userAvatar} name={event.userName} size={40} ring={false} />
+      <div className="flex items-center gap-3 pb-4">
+        <Avatar src={event.userAvatar} name={event.userName} size={32} ring={false} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate type-body-strong">{event.userName}</span>
+          <div className="flex items-center gap-1">
+            <span className="truncate type-label">{event.userName}</span>
             {event.userLevel && <LevelBadge level={event.userLevel} />}
           </div>
           <p className="truncate type-caption text-muted">
-            {event.type === 'mission' ? 'completou uma trilha' : `em ${event.missionTitle}`} · {timeAgo(event.createdAt)}
+            {event.type === 'mission' ? `completou uma trilha · ${timeAgo(event.createdAt)}` : timeAgo(event.createdAt)}
           </p>
         </div>
         {mine && (
@@ -160,44 +160,44 @@ function FeedPost({ event, onComments }: { event: FeedEvent; onComments: () => v
 
       {/* mídia */}
       {event.type === 'mission' ? (
-        <div className="mx-card flex items-center gap-4 rounded-control bg-ink p-4 text-white">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-control bg-accent">
-            <Trophy className="size-6 text-ink" />
+        <div className="flex items-center gap-4 rounded-card bg-secondary p-5">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface">
+            <Trophy className="size-5 text-primary" strokeWidth={1.5} />
           </div>
           <div className="min-w-0">
-            <p className="type-overline text-white/60">Trilha concluída</p>
+            <p className="type-caption text-muted">Trilha concluída</p>
             <p className="truncate type-title3">{event.missionTitle}</p>
           </div>
         </div>
       ) : (
-        event.imageUrl && <img src={event.imageUrl} alt={`Foto em ${event.missionTitle}`} className="aspect-[4/3] w-full object-cover" loading="lazy" onDoubleClick={() => !liked && kudos()} />
+        event.imageUrl && <img src={event.imageUrl} alt={`Foto em ${event.missionTitle}`} className="aspect-[4/3] w-full rounded-card object-cover" loading="lazy" onDoubleClick={() => !liked && kudos()} />
       )}
 
       {/* conteúdo */}
-      <div className="px-card pt-3 pb-card">
+      <div className={event.type === 'mission' || event.imageUrl ? 'pt-4' : ''}>
         {event.type === 'checkin' && (
           <div className="flex items-center justify-between gap-3">
             <span className="truncate type-title3">{event.missionTitle}</span>
             {event.rating ? <Stars value={event.rating} size={14} /> : null}
           </div>
         )}
-        {event.content && <p className={cn('type-body', event.type === 'checkin' ? 'mt-1' : 'text-muted')}>{event.content}</p>}
+        {event.content && <p className={cn('type-body', event.type === 'checkin' ? 'mt-1' : 'mt-3 text-muted')}>{event.content}</p>}
 
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 -ml-2 flex items-center gap-1">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={kudos}
-            className={cn('flex h-9 items-center gap-1.5 rounded-full px-3.5 type-label transition-colors', liked ? 'bg-danger-soft text-danger' : 'bg-bg text-ink')}
+            className={cn('flex h-9 items-center gap-1.5 rounded-full px-2 type-caption transition-colors', liked ? 'text-danger' : 'text-muted')}
             aria-pressed={liked}
             aria-label={`Kudos, ${count}`}
           >
             <motion.span key={String(liked)} initial={{ scale: liked ? 0.4 : 1 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 12 }}>
-              <Heart className={cn('size-4.5', liked && 'fill-current')} />
+              <Heart className={cn('size-4.5', liked && 'fill-current')} strokeWidth={1.75} />
             </motion.span>
             <span className="type-number">{count}</span>
           </motion.button>
-          <button onClick={onComments} className="flex h-9 items-center gap-1.5 rounded-full bg-bg px-3.5 type-label" aria-label={`Comentários, ${event.commentsCount}`}>
-            <MessageCircle className="size-4.5" /> <span className="type-number">{event.commentsCount}</span>
+          <button onClick={onComments} className="flex h-9 items-center gap-1.5 rounded-full px-2 type-caption text-muted" aria-label={`Comentários, ${event.commentsCount}`}>
+            <MessageCircle className="size-4.5" strokeWidth={1.75} /> <span className="type-number">{event.commentsCount}</span>
           </button>
         </div>
       </div>

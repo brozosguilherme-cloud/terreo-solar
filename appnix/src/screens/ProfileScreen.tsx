@@ -1,7 +1,7 @@
-import { ArrowLeft, ChevronRight, Cookie, FileText, Lock, LogOut, MapPin, Settings, Shield, Sparkles, Stamp, Trash2, Trophy } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Cookie, FileText, Lock, LogOut, MapPin, Settings, Shield, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/BottomSheet';
-import { Avatar, Button, Card, IconButton, ProgressBar, cn } from '../components/ui';
+import { Avatar, Button, IconButton, ProgressBar, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
 import { LEVEL_TIERS, getUserLevelInfo } from '../lib/levels';
@@ -61,47 +61,44 @@ export function ProfileScreen() {
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
       {/* Hero */}
-      <div className="rounded-b-sheet bg-secondary px-gutter pt-safe pb-6">
+      <div className="px-gutter pt-safe">
         <div className="flex items-center justify-between">
           <IconButton icon={ArrowLeft} label="Voltar" onClick={() => setTab('home')} />
           <IconButton icon={Settings} label="Configurações" onClick={() => setSettings(true)} />
         </div>
-        <div className="mt-2 flex flex-col items-center text-center">
+        <div className="mt-4 flex flex-col items-center text-center">
           <Avatar src={profile.avatarUrl} name={profile.name} points={profile.points} size={96} />
-          <h1 className="mt-3 type-title2">{profile.name}</h1>
+          <h1 className="mt-4 type-title2">{profile.name}</h1>
           <p className="type-callout text-muted">{profile.email}</p>
-          <button onClick={() => setLevels(true)} className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 type-label text-white transition active:scale-95">
-            <Trophy className="size-4 text-accent" /> Nível {level.levelNum} · {level.title}
+          <button onClick={() => setLevels(true)} className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3.5 type-caption text-ink transition active:scale-95">
+            Nível {level.levelNum} · {level.title}
           </button>
         </div>
-        <Card className="mt-5 p-card">
+        <div className="mt-8">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className="truncate type-label">{level.nextTierTitle ? `Rumo a ${level.nextTierTitle}` : 'Nível máximo!'}</span>
             <span className="type-caption type-number text-muted">{level.progressPercent}%</span>
           </div>
-          <ProgressBar percent={level.progressPercent} />
+          <ProgressBar percent={level.progressPercent} className="h-1" />
           <p className="mt-2 type-caption type-number text-muted">
             {level.nextTierRequiredPontos != null
               ? `${formatPoints(level.currentPontos)} / ${formatPoints(level.nextTierRequiredPontos)} pts`
               : `${formatPoints(level.currentPontos)} pts acumulados`}
           </p>
-        </Card>
+        </div>
       </div>
 
-      {/* Estatísticas */}
-      <div className="grid grid-cols-3 gap-3 px-gutter pt-6">
+      {/* Estatísticas — números em linha, sem blocos */}
+      <div className="mx-gutter mt-8 grid grid-cols-3 divide-x divide-line-soft border-y border-line-soft py-5">
         {[
-          { icon: Sparkles, label: 'Pontos', value: formatPoints(profile.points), cls: 'bg-accent/30 text-primary-strong' },
-          { icon: Trophy, label: 'Missões', value: String(profile.missionsCompleted), cls: 'bg-secondary text-primary-strong' },
-          { icon: Stamp, label: 'Passaporte', value: String(profile.checkins.length), cls: 'bg-success-soft text-success-ink' },
+          { label: 'Pontos', value: formatPoints(profile.points) },
+          { label: 'Missões', value: String(profile.missionsCompleted) },
+          { label: 'Passaporte', value: String(profile.checkins.length) },
         ].map((s) => (
-          <Card key={s.label} className="flex flex-col items-center px-2 py-4">
-            <span className={cn('flex size-9 items-center justify-center rounded-control', s.cls)}>
-              <s.icon className="size-4" />
-            </span>
-            <span className="mt-2 type-stat">{s.value}</span>
+          <div key={s.label} className="flex flex-col items-center">
+            <span className="type-stat">{s.value}</span>
             <span className="type-caption text-muted">{s.label}</span>
-          </Card>
+          </div>
         ))}
       </div>
 
