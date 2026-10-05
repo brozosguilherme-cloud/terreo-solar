@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seu Imposto</title>
+  <meta name="description" content="Descubra quanto do seu salário vira imposto e para onde esse dinheiro vai no orçamento público." />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    try { const t = localStorage.getItem('si-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#">
+        <img src="icon.svg" alt="" width="28" height="28" />
+        <span>Seu Imposto</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#calcular">Calcular</a>
+        <a href="#destino">Para onde vai</a>
+        <a href="#metodologia">Metodologia</a>
+      </nav>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.4 5.4 0 0 1-9.54-4.9A5.4 5.4 0 0 1 13.36 3.1 9.1 9.1 0 0 0 12 3Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="calcular">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">Calculadora · dados abertos do Tesouro Nacional</span>
+          <h1>Quanto do seu salário <em>vira imposto</em>?</h1>
+          <p class="lead">Informe seu salário e veja, em segundos, quanto você paga por ano em impostos diretos e embutidos no consumo, e para onde esse dinheiro vai.</p>
+          <ul class="hero-points">
+            <li>Tabelas de IR 2026 com a nova isenção até R$ 5 mil</li>
+            <li>Impostos escondidos no preço do que você compra</li>
+            <li>Destino do dinheiro com base no orçamento federal</li>
+          </ul>
+        </div>
+
+        <form class="card form" id="form" autocomplete="off" onsubmit="return false">
+          <label class="field">
+            <span class="field-label">Salário bruto mensal</span>
+            <div class="money">
+              <span>R$</span>
+              <input id="bruto" inputmode="decimal" value="4.500,00" aria-describedby="bruto-hint" />
+            </div>
+            <small id="bruto-hint">Carteira assinada (CLT), antes dos descontos</small>
+          </label>
+
+          <div class="row">
+            <label class="field">
+              <span class="field-label">Dependentes</span>
+              <div class="stepper">
+                <button type="button" data-step="-1" aria-label="Menos um dependente">−</button>
+                <input id="dependentes" type="number" min="0" max="10" value="0" />
+                <button type="button" data-step="1" aria-label="Mais um dependente">+</button>
+              </div>
+            </label>
+            <label class="field">
+              <span class="field-label">Quanto do líquido você gasta <output id="gasto-out">85%</output></span>
+              <input id="gasto" type="range" min="20" max="100" step="5" value="85" />
+            </label>
+          </div>
+
+          <details class="more">
+            <summary>Tenho carro ou imóvel <span class="muted">(IPVA e IPTU)</span></summary>
+            <div class="row">
+              <label class="field">
+                <span class="field-label">IPVA por ano</span>
+                <div class="money"><span>R$</span><input id="ipva" inputmode="decimal" placeholder="0,00" /></div>
+              </label>
+              <label class="field">
+                <span class="field-label">IPTU por ano</span>
+                <div class="money"><span>R$</span><input id="iptu" inputmode="decimal" placeholder="0,00" /></div>
+              </label>
+            </div>
+          </details>
+        </form>
+      </div>
+    </section>
+
+    <section class="wrap results" aria-live="polite">
+      <div class="stats">
+        <article class="stat stat-main">
+          <span class="stat-label">Você paga por ano</span>
+          <strong class="stat-value" id="total">—</strong>
+          <span class="stat-sub" id="total-mes">—</span>
+        </article>
+        <article class="stat">
+          <span class="stat-label">Da sua renda anual</span>
+          <strong class="stat-value" id="carga">—</strong>
+          <span class="stat-sub">incluindo o 13º salário</span>
+        </article>
+        <article class="stat">
+          <span class="stat-label">Você trabalha só para o governo até</span>
+          <strong class="stat-value" id="dia-livre">—</strong>
+          <span class="stat-sub" id="dias">—</span>
+        </article>
+      </div>
+
+      <article class="card">
+        <header class="card-head">
+          <h2>Do que é feito o seu imposto</h2>
+          <p class="muted">Composição anual por tipo de tributo</p>
+        </header>
+        <div class="stack" id="stack" role="img" aria-label="Composição do imposto anual"></div>
+        <ul class="legend" id="legend"></ul>
+        <details class="more">
+          <summary>Detalhar impostos no consumo</summary>
+          <table class="table" id="consumo-table">
+            <thead><tr><th>Grupo de gasto</th><th>Carga média</th><th>Imposto no ano</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <section class="wrap destino" id="destino">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Orçamento federal <span id="exercicio"></span></span>
+          <h2>Para onde vai o seu dinheiro</h2>
+          <p class="muted" id="destino-sub">Seu imposto anual distribuído na mesma proporção dos gastos da União.</p>
+        </div>
+        <div class="seg" role="tablist" aria-label="Unidade">
+          <button type="button" role="tab" aria-selected="true" data-mode="seu">Seu dinheiro</button>
+          <button type="button" role="tab" aria-selected="false" data-mode="total">Orçamento total</button>
+        </div>
+      </div>
+      <div class="badge-warn" id="estimado" hidden>
+        Valores do orçamento aproximados. Rode o script de atualização para buscar os dados oficiais.
+      </div>
+      <div class="card bars" id="bars"></div>
+      <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+    </section>
+
+    <section class="wrap metodo" id="metodologia">
+      <h2>Como calculamos</h2>
+      <div class="metodo-grid">
+        <article class="card">
+          <h3>Imposto de Renda e INSS</h3>
+          <p>Calculados mês a mês com as tabelas vigentes (IR <span id="vig-ir"></span>, INSS <span id="vig-inss"></span>), escolhendo automaticamente o melhor entre as deduções legais e o desconto simplificado. O 13º é tratado como um mês adicional.</p>
+        </article>
+        <article class="card">
+          <h3>Impostos no consumo</h3>
+          <p>ICMS, PIS/Cofins, IPI e ISS estão embutidos nos preços. Aplicamos uma carga média de <strong id="carga-consumo"></strong> sobre a parte do salário líquido que você gasta, com pesos por grupo de despesa.</p>
+        </article>
+        <article class="card">
+          <h3>Para onde vai</h3>
+          <p>Usamos as despesas liquidadas da União por função de governo, publicadas no <strong>RREO</strong> via API do <strong>SICONFI</strong> (Tesouro Nacional), excluindo o refinanciamento da dívida. <span id="fonte"></span></p>
+        </article>
+      </div>
+      <p class="muted small">Estimativa educativa, não substitui a declaração de IR nem orientação contábil. Parte dos tributos vai para estados e municípios; aqui a distribuição segue o orçamento federal como aproximação.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">Feito com dados abertos · Tesouro Nacional (SICONFI) · Receita Federal</div>
+  </footer>
+
+  <script src="js/calc.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

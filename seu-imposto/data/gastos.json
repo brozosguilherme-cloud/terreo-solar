@@ -1,0 +1,20 @@
+{
+  "estimado": true,
+  "exercicio": 2024,
+  "atualizado_em": null,
+  "fonte": "Estimativa inicial aproximada — rode scripts/update-data.mjs para buscar os dados oficiais do SICONFI (Tesouro Nacional).",
+  "unidade": "R$ bilhões",
+  "areas": [
+    { "id": "previdencia", "nome": "Previdência (INSS e servidores)", "valor": 1000 },
+    { "id": "divida", "nome": "Dívida pública (juros e amortização)", "valor": 900 },
+    { "id": "repasses", "nome": "Repasses a estados, municípios e outros encargos", "valor": 650 },
+    { "id": "assistencia", "nome": "Assistência social (Bolsa Família, BPC)", "valor": 300 },
+    { "id": "saude", "nome": "Saúde", "valor": 225 },
+    { "id": "poderes", "nome": "Poderes, administração e outros", "valor": 190 },
+    { "id": "educacao", "nome": "Educação", "valor": 150 },
+    { "id": "defesa", "nome": "Defesa e segurança pública", "valor": 135 },
+    { "id": "trabalho", "nome": "Trabalho (seguro-desemprego, abono)", "valor": 110 },
+    { "id": "infraestrutura", "nome": "Infraestrutura, transporte e cidades", "valor": 60 },
+    { "id": "economia", "nome": "Agro, ciência, indústria e meio ambiente", "valor": 60 }
+  ]
+}

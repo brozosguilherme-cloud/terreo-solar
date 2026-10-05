@@ -1,0 +1,41 @@
+{
+  "_comentario": "Parâmetros tributários usados pela calculadora. Atualize aqui quando as tabelas mudarem.",
+  "inss": {
+    "vigencia": "2025",
+    "faixas": [
+      { "ate": 1518.00, "aliquota": 0.075 },
+      { "ate": 2793.88, "aliquota": 0.09 },
+      { "ate": 4190.83, "aliquota": 0.12 },
+      { "ate": 8157.41, "aliquota": 0.14 }
+    ]
+  },
+  "irpf": {
+    "vigencia": "2026 (Lei 15.270/2025)",
+    "faixas": [
+      { "ate": 2428.80, "aliquota": 0, "deducao": 0 },
+      { "ate": 2826.65, "aliquota": 0.075, "deducao": 182.16 },
+      { "ate": 3751.05, "aliquota": 0.15, "deducao": 394.16 },
+      { "ate": 4664.68, "aliquota": 0.225, "deducao": 675.49 },
+      { "ate": null, "aliquota": 0.275, "deducao": 908.73 }
+    ],
+    "deducao_dependente": 189.59,
+    "desconto_simplificado": 607.20,
+    "reducao": {
+      "isencao_ate": 5000.00,
+      "reducao_maxima": 312.89,
+      "parcial_ate": 7350.00,
+      "constante": 978.62,
+      "fator": 0.133145
+    }
+  },
+  "consumo": {
+    "_comentario": "Carga média de tributos embutida no preço final (ICMS, PIS/Cofins, IPI, ISS). Estimativas aproximadas por grupo de gasto.",
+    "categorias": [
+      { "id": "alimentacao", "nome": "Alimentação e bebidas", "peso": 0.25, "carga": 0.20 },
+      { "id": "moradia", "nome": "Moradia, energia e água", "peso": 0.30, "carga": 0.15 },
+      { "id": "transporte", "nome": "Transporte e combustível", "peso": 0.18, "carga": 0.30 },
+      { "id": "saude", "nome": "Saúde e higiene", "peso": 0.10, "carga": 0.25 },
+      { "id": "outros", "nome": "Lazer, vestuário e outros", "peso": 0.17, "carga": 0.30 }
+    ]
+  }
+}
