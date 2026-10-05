@@ -6,6 +6,11 @@ e para onde esse dinheiro vai, segundo o orçamento da União.
 
 ## Rodar
 
+**Jeito mais fácil:** abra `dist/seu-imposto.html` com dois cliques. É um arquivo único, com tudo embutido.
+Para regerá-lo depois de mudar código ou dados: `node seu-imposto/scripts/build-single.mjs`.
+
+**Versão de desenvolvimento** (arquivos separados):
+
 ```bash
 python3 -m http.server 8000 --directory seu-imposto
 # ou: npx serve seu-imposto
@@ -44,6 +49,7 @@ node --test seu-imposto/test/*.test.mjs
 | `data/parametros.json` | Tabelas de IR/INSS e carga média no consumo, que você edita quando mudarem |
 | `data/gastos.json` | Gastos da União por área (gerado pelo script) |
 | `scripts/update-data.mjs` | Atualizador via API do SICONFI |
+| `scripts/build-single.mjs` | Gera `dist/seu-imposto.html` (arquivo único) |
 
 ## Próximos passos (quando quiser publicar)
 

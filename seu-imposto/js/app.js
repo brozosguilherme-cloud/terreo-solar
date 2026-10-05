@@ -138,10 +138,15 @@
     });
   }
 
-  Promise.all([
-    fetch('data/parametros.json').then((r) => r.json()),
-    fetch('data/gastos.json').then((r) => r.json()),
-  ]).then(([p, g]) => {
+  // versão de arquivo único (scripts/build-single.mjs) traz os dados embutidos
+  const embutido = window.SEU_IMPOSTO_DATA;
+  (embutido
+    ? Promise.resolve([embutido.parametros, embutido.gastos])
+    : Promise.all([
+      fetch('data/parametros.json').then((r) => r.json()),
+      fetch('data/gastos.json').then((r) => r.json()),
+    ])
+  ).then(([p, g]) => {
     params = p;
     gastos = g;
     preencherMetodologia();
