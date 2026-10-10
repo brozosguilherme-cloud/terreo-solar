@@ -1,26 +1,27 @@
-import { Compass } from 'lucide-react';
 import { motion } from 'motion/react';
+import { LogoMark } from '../components/Logo';
 
 export function SplashScreen() {
   return (
     <div className="flex h-full flex-col items-center justify-center bg-secondary">
       <motion.div
-        initial={{ scale: 0.6, opacity: 0, rotate: -60 }}
-        animate={{ scale: 1, opacity: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 160, damping: 14 }}
-        className="flex size-24 items-center justify-center rounded-sheet bg-primary shadow-primary"
+        initial={{ scale: 0.6, opacity: 0, y: 12 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 180, damping: 14 }}
       >
-        <motion.div animate={{ rotate: [0, 18, -12, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}>
-          <Compass className="size-12 text-white" strokeWidth={1.8} />
+        {/* o pin "quica" de leve, como um marcador caindo no mapa */}
+        <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }} className="drop-shadow-[0_12px_20px_rgb(233_163_77/0.35)]">
+          <LogoMark size={104} />
         </motion.div>
       </motion.div>
       <motion.h1
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
-        className="mt-6 type-display"
+        className="mt-6 flex flex-col items-center gap-1"
       >
-        App<span className="text-primary">Nix</span>
+        <span className="font-display text-[56px] leading-[0.8] font-extrabold tracking-[-0.05em] text-ink">nix</span>
+        <span className="font-display text-base font-medium text-[#7A4710]">experiências</span>
       </motion.h1>
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-2 type-callout text-muted">
         Explore. Faça check-in. Suba de nível.

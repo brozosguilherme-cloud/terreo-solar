@@ -24,7 +24,25 @@ Regras de clareza que valem junto:
 
 ---
 
-## 2. Paleta & tokens
+## 2. Logo
+
+O símbolo é um **pin de mapa** escuro com duas setas de "subir de nível" (dourada `#FFD166` e laranja `#E9A34D`), sobre um quadrado laranja `#E9A34D` com cantos de 28/120. A marca escrita é **"nix"** em minúsculas (Outfit 800, tracking -0,05em, entrelinha 0,8), com o subtítulo **"experiências"** (Outfit 500).
+
+| Uso | Componente / arquivo |
+|---|---|
+| Símbolo isolado | `<LogoMark size={…} />` (`src/components/Logo.tsx`) |
+| Símbolo + marca (cabeçalhos, login, site) | `<Logo size={40} />` — fundo claro: marca `#222222`, subtítulo `#7A4710` |
+| Sobre fundo escuro (rodapés) | `<Logo tone="dark" />` — marca branca, subtítulo `#E9A34D` |
+| Favicon / PWA | `public/icon.svg` |
+| Ícone Android e splash nativa | `assets/*.png` → `npx capacitor-assets generate --android` (gera `android/app/src/main/res/`) |
+
+- Proporção da marca: o "nix" tem 0,75× a altura do símbolo, e o subtítulo 0,3× (mínimo 11 px).
+- Ícone adaptativo do Android: fundo `#E9A34D` e só o pin na camada da frente, dentro da zona segura (66/108).
+- Não recolorir o pin, não separar as setas e não usar o símbolo sem o quadrado laranja, exceto na camada da frente do ícone adaptativo.
+
+---
+
+## 3. Paleta & tokens
 
 | Token | Hex | Classe | Uso |
 |---|---|---|---|
@@ -47,7 +65,7 @@ As categorias usam tons suaves só nas miniaturas sem foto: turismo `#FFF1DE`, g
 
 ---
 
-## 3. Tipografia
+## 4. Tipografia
 
 - **Outfit:** títulos e logotipo.
 - **Inter:** corpo e números.
@@ -72,7 +90,7 @@ As duas vêm empacotadas no app via `@fontsource-variable` (mesmos pesos do Goog
 
 ---
 
-## 4. Espaçamento, raios e sombras
+## 5. Espaçamento, raios e sombras
 
 | Token | Valor | Uso |
 |---|---|---|
@@ -92,7 +110,7 @@ As duas vêm empacotadas no app via `@fontsource-variable` (mesmos pesos do Goog
 
 ---
 
-## 5. Componentes
+## 6. Componentes
 
 **A. Tab bar flutuante (`BottomNav`)**
 - Centralizada a 24 px da borda (+ safe area): `bg-white/95`, `backdrop-blur-xl`, `rounded-[32px]`, `p-2`, `gap-2`, `shadow-float`.
@@ -136,7 +154,7 @@ Tamanhos: `lg` 52 · `md` 44 · `sm` 36 (pill).
 
 ---
 
-## 6. Padrões de layout
+## 7. Padrões de layout
 
 - **Header padrão (Home):** "Olá, Guilherme" (`type-title1`) com o título de nível em `type-caption` muted abaixo. Sino com ponto vermelho e avatar com anel à direita.
 - **Filtros por pílulas:** `overflow-x-auto no-scrollbar flex gap-2 py-2`.
@@ -153,7 +171,7 @@ Tamanhos: `lg` 52 · `md` 44 · `sm` 36 (pill).
 
 ---
 
-## 7. Checklist de qualidade visual
+## 8. Checklist de qualidade visual
 
 - [ ] Nada de bordas pretas rígidas: use `border-line/50` (ou `shadow-card`) com sombras sutis.
 - [ ] Todo elemento tocável tem `active:scale-95` (cards: `active:scale-[0.98]`).

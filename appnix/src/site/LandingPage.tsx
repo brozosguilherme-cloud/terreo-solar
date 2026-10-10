@@ -1,4 +1,5 @@
-import { Camera, Compass, MapPin, Shield, Trophy, Users } from 'lucide-react';
+import { Camera, MapPin, Shield, Trophy, Users } from 'lucide-react';
+import { Logo } from '../components/Logo';
 import { useEffect, useState } from 'react';
 import { DeviceFrame } from '../components/DeviceFrame';
 
@@ -28,14 +29,7 @@ export function LandingPage() {
     <div className="min-h-dvh bg-secondary">
       <div className="mx-auto flex min-h-dvh max-w-6xl items-center gap-16 px-10 py-12">
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <div className="flex size-11 items-center justify-center rounded-control bg-primary">
-              <Compass className="size-6 text-white" />
-            </div>
-            <span className="type-logo">
-              App<span className="text-primary">Nix</span>
-            </span>
-          </div>
+          <Logo size={44} />
           <h1 className="mt-10 font-display text-6xl leading-[1.05] font-bold tracking-[-0.03em]">
             Sua cidade é o <span className="text-primary">mapa do tesouro</span>.
           </h1>

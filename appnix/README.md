@@ -74,7 +74,7 @@ Permissões já declaradas no `AndroidManifest.xml`: internet, localização (fi
 
 O workflow `.github/workflows/appnix-android.yml` roda os testes, gera o `dist-app` e compila um **APK debug**, que fica disponível como artefato da execução. Secrets opcionais: `VITE_FIREBASE_*`, `VITE_GOOGLE_MAPS_API_KEY` e `GOOGLE_SERVICES_JSON_BASE64` (o `google-services.json` em base64).
 
-Ícone e splash: gere os assets nativos com `npx @capacitor/assets generate` a partir de um `assets/icon.png` (1024×1024). O ícone vetorial do app está em `public/icon.svg`.
+Ícone e splash nativos: os PNGs-fonte ficam em `assets/` (ícone, camada da frente, fundo e splash claro/escuro). Para regerar, rode `npx capacitor-assets generate --android --assetPath assets` e mantenha o `mipmap-anydpi-v26/ic_launcher.xml` sem `inset`, porque a camada da frente já respeita a zona segura. O ícone vetorial está em `public/icon.svg` e o componente do logo em `src/components/Logo.tsx`.
 
 ## Estrutura
 

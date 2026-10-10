@@ -1,6 +1,7 @@
-import { Compass, Eye, EyeOff, Lock, Mail, MailCheck, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, MailCheck, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState, type FormEvent, type ReactNode } from 'react';
+import { Logo } from '../components/Logo';
 import { Button, Segmented, cn } from '../components/ui';
 import { useApp } from '../hooks/useApp';
 import { friendlyError } from '../lib/errors';
@@ -100,13 +101,8 @@ export function LoginScreen() {
   return (
     <div className="h-full overflow-y-auto bg-bg no-scrollbar">
       <div className="relative px-gutter pt-safe pb-4">
-        <div className="relative mt-6 flex items-center gap-2">
-          <div className="flex size-10 items-center justify-center rounded-control bg-primary">
-            <Compass className="size-6 text-white" />
-          </div>
-          <span className="type-logo">
-            App<span className="text-primary">Nix</span>
-          </span>
+        <div className="relative mt-6">
+          <Logo size={40} />
         </div>
         <h1 className="relative mt-8 type-display">
           {mode === 'login' ? 'Bem-vindo de volta, explorador.' : 'Sua cidade virou um jogo.'}
